@@ -43,9 +43,26 @@ function M.init()
 		M.custom = require("htmlgui." .. script)
 	end
 
+	-- add event listeners
+  M.set_keys()
+
+	-- reload everythin on save
+	M.au_save = a.nvim_create_augroup("htmlgui_save", { clear = true })
+	a.nvim_create_autocmd("BufWritePost", {
+		group = M.au_save,
+		pattern = { "*.html" },
+		callback = function()
+			M.render()
+			M.set_keys()
+		end,
+	})
+end
+
+function M.set_keys()
 	-- M.state.data has all the divs
 	for _, div in pairs(M.state.data) do
 		if div.div.attrs ~= nil then
+			-- TODO: generalize beyond j
 			if vim.tbl_contains(vim.tbl_keys(div.div.attrs), "on:j") then
 				local callback = function()
 					local handle = M.custom[div.div.attrs["on:j"]]
@@ -55,16 +72,6 @@ function M.init()
 			end
 		end
 	end
-
-	-- Highlight on yank
-	M.au_save = a.nvim_create_augroup("htmlgui_save", { clear = true })
-	a.nvim_create_autocmd("BufWritePost", {
-		group = M.au_save,
-		pattern = { "*.html" },
-		callback = function()
-			M.render()
-		end,
-	})
 end
 
 function M.get_root(buf)
