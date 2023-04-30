@@ -1,106 +1,53 @@
-function P(x)
-	print(vim.inspect(x))
-end
-
-local M = {}
-M.state = {}
-M.custom = nil
-M.style = {}
-
 local a = vim.api
 local ts = vim.treesitter
 local parsers = require("nvim-treesitter.parsers")
-local map = vim.keymap.set
 
-function M.init()
-	-- create a split for html, one for gui
-	vim.cmd("split")
-	local tabpage = a.nvim_get_current_tabpage()
-	local wins = a.nvim_tabpage_list_wins(tabpage)
+local M = {}
 
-	local html_win = wins[1]
-	local html_buf = a.nvim_win_get_buf(html_win)
-
-	local gui_win = wins[2]
-	local gui_buf = a.nvim_create_buf(false, true)
-	a.nvim_win_set_buf(gui_win, gui_buf)
-
-	local root = M.get_root(html_buf)
-	M.state = {
-		html = { win = html_win, buf = html_buf },
-		gui = { win = gui_win, buf = gui_buf },
-		root = root,
-		data = {},
-	}
-	M.render()
-
-	-- load custom lua
-	local script = M.get_script(root, html_buf)
-	script = string.sub(script, 1, string.len(script) - 4)
-	if pcall(function()
-		require("htmlgui." .. script)
-	end) then
-		M.custom = require("htmlgui." .. script)
+function M.get_root(buf, lang)
+	if lang == nil then
+		lang = "html"
 	end
-
-	-- add event listeners
-  M.set_keys()
-
-	-- reload everythin on save
-	M.au_save = a.nvim_create_augroup("htmlgui_save", { clear = true })
-	a.nvim_create_autocmd("BufWritePost", {
-		group = M.au_save,
-		pattern = { "*.html" },
-		callback = function()
-			M.render()
-			M.set_keys()
-		end,
-	})
+	local parser = parsers.get_parser(buf, lang)
+	return parser:parse()[1]:root()
 end
 
-function M.set_keys()
-	-- M.state.data has all the divs
-	for _, div in pairs(M.state.data) do
-		if div.div.attrs ~= nil then
-			-- TODO: generalize beyond j
-			if vim.tbl_contains(vim.tbl_keys(div.div.attrs), "on:j") then
-				local callback = function()
-					local handle = M.custom[div.div.attrs["on:j"]]
-					handle(M.custom, { buf = div.buf, win = div.win, text = "Counting" })
-				end
-				map("n", "j", callback, { buffer = div.buf })
-			end
-		end
+function M.get_text_from_range(range, buf)
+	-- simple trim and concat
+	local lines = a.nvim_buf_get_text(buf, range[1], range[2], range[3], range[4], {})
+	local text = ""
+	if vim.tbl_count(lines) > 1 then
+		vim.tbl_map(function(line)
+			text = text .. vim.trim(line)
+		end, lines)
+	else
+		text = lines[1]
 	end
+	return text
 end
 
-function M.get_root(buf)
-	local parser = parsers.get_parser(buf, "html")
-	local root = parser:parse()[1]:root()
-	return root
-end
-
-function M.status_line(win, buf)
+function M.get_info(buf)
+	-- get info from html buffer
 	local root = M.get_root(buf)
-	local filename = vim.fs.basename(a.nvim_buf_get_name(buf))
 	local title = M.get_title(root, buf)
 	local script = M.get_script(root, buf)
 	local style = M.get_style(root, buf)
-
-	local width = a.nvim_win_get_width(win)
-	local right = string.format("❰  %s ❰  %s ❰  %s █", filename, style, script)
-	local nright = a.nvim_strwidth(right)
-	local ntitle = a.nvim_strwidth(title)
-	local nuni = a.nvim_strwidth("█")
-	local rem = width - ntitle - nright - nuni
-	local lpad = math.ceil(rem / 2)
-	local rpad = rem - lpad
-	local left = string.format("█%s%s%s", string.rep(" ", lpad), title, string.rep(" ", rpad))
-	return left .. right
+	local filename = vim.fs.basename(a.nvim_buf_get_name(buf))
+	local info = {
+		root = root,
+		title = title,
+		script = script,
+		style = style,
+		filename = filename,
+	}
+	return info
 end
 
-function M.get_first_match(query, root, buf)
-	local parsed_query = ts.query.parse("html", query)
+function M.get_first_match(query, root, buf, lang)
+	if lang == nil then
+		lang = "html"
+	end
+	local parsed_query = ts.query.parse(lang, query)
 	local s, _, e, _ = root:range()
 	for _, node, metadata in parsed_query:iter_captures(root, buf, s, e) do
 		local ids = vim.tbl_keys(metadata)
@@ -111,8 +58,11 @@ function M.get_first_match(query, root, buf)
 	end
 end
 
-function M.get_all_matches(query, root, buf)
-	local parsed_query = ts.query.parse("html", query)
+function M.get_all_matches(query, root, buf, lang)
+	if lang == nil then
+		lang = "html"
+	end
+	local parsed_query = ts.query.parse(lang, query)
 	local s, _, e, _ = root:range()
 	local matches = {}
 	for _, node, metadata in parsed_query:iter_captures(root, buf, s, e) do
@@ -123,11 +73,6 @@ function M.get_all_matches(query, root, buf)
 		table.insert(matches, { node = node, metadata = metadata })
 	end
 	return matches
-end
-
-function M.get_text_from_range(range, buf)
-	local text = a.nvim_buf_get_text(buf, range[1], range[2], range[3], range[4], {})[1]
-	return text
 end
 
 function M.get_title(root, buf)
@@ -181,6 +126,7 @@ function M.get_body(buf)
     (#eq? @_body "body")
 )]]
 	local tt = M.get_first_match(query, root, buf)
+	-- HACK: unfortunately, not sure how to use treesitter here
 	return tt.node:parent():parent()
 end
 
@@ -199,6 +145,7 @@ function M.parse_div(node, buf)
 	local nattrs = tag:named_child_count() -- start_tag
 	local attrs = {}
 	for i = 1, nattrs - 1 do
+		-- HACK: unfortunately, not sure how to use treesitter here
 		local attr = tag:named_child(i)
 		local attr_key = ts.get_node_text(attr:named_child(0), buf)
 		local attr_value = ts.get_node_text(attr:named_child(1):named_child(0), buf)
@@ -209,8 +156,9 @@ function M.parse_div(node, buf)
 end
 
 function M.get_rect_from_div(div)
+	-- parse div to get style, with sane defaults
+	local rect = { row = 0.1, col = 0.1, width = 0.8, height = 0.8, zindex = 10 }
 	local parts = vim.split(div.attrs.style, ";")
-	local rect = {}
 	for _, v in ipairs(parts) do
 		local vv = vim.split(v, ":")
 		if vim.tbl_count(vv) == 2 then
@@ -227,9 +175,11 @@ function M.get_width_height(win)
 end
 
 function M.create_div(div, parent_win)
+	-- create buffer with div text
 	local rect = M.get_rect_from_div(div)
 	local buf = a.nvim_create_buf(false, true)
 	a.nvim_buf_set_lines(buf, 0, -1, false, { div.text })
+
 	local size = M.get_width_height(parent_win)
 	if rect.col < 1 then
 		rect.col = math.ceil(size.width * rect.col)
@@ -259,24 +209,7 @@ function M.create_div(div, parent_win)
 		style = "minimal",
 	}
 	local win = a.nvim_open_win(buf, true, opts)
-
-	-- listeners
-
 	return { div = div, win = win, buf = buf }
-end
-
-function M.render()
-	for _, s in ipairs(M.state.data) do
-		a.nvim_win_close(s.win, true)
-	end
-	M.state.data = {}
-	local body = M.get_body(M.state.html.buf)
-	for i = 2, vim.tbl_count(body:named_children()) - 1 do
-		local child = body:named_children()[i]
-		local div = M.parse_div(child, M.state.html.buf)
-		local data = M.create_div(div, M.state.gui.win)
-		table.insert(M.state.data, data)
-	end
 end
 
 return M

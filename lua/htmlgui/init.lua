@@ -1,3 +1,11 @@
-local h = require("htmlgui.ts_html")
+local layout = require("htmlgui.layout")
 
-h.init()
+function P(x)
+	print(vim.inspect(x))
+end
+
+layout.setup({
+	layout = {
+		direction = "vertical",
+	},
+})
