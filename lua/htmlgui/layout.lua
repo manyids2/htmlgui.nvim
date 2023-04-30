@@ -12,34 +12,77 @@ function M.sleep(n)
 	end
 end
 
+function M.focus(win_name, state)
+	vim.notify("focused " .. win_name)
+	P(state)
+	if state[win_name] ~= nil then
+		if state[win_name].win ~= nil then
+			a.nvim_set_current_win(state[win_name].win)
+		else
+			vim.notify("Unknown name :" .. win_name, vim.log.levels.ERROR)
+		end
+	end
+end
+
 function M.create_bufs_wins(config)
+	local state = {
+		config = config,
+		data = {},
+	}
+
 	local tabpage = a.nvim_get_current_tabpage()
 	local win = a.nvim_tabpage_get_win(tabpage)
 
 	-- makes sure first win is html
-	local html = {}
-	html.win = win
-	html.buf = a.nvim_win_get_buf(html.win)
+	state.html = {}
+	state.html.win = win
+	state.html.buf = a.nvim_win_get_buf(state.html.win)
 
+	-- the other split - assumes there are 2 splits
 	if config.layout.direction == "vertical" then
 		vim.cmd("split")
 	else
 		vim.cmd("vsplit")
 	end
 
-	-- the other split - assumes there are 2 splits
-	local wins = a.nvim_tabpage_list_wins(tabpage)
-	local gui = {}
-	gui.win = wins[2]
-	gui.buf = a.nvim_create_buf(false, true)
-	a.nvim_win_set_buf(gui.win, gui.buf)
+	-- local wins = a.nvim_tabpage_list_wins(tabpage)
+	state.gui = {}
+	state.gui.win = a.nvim_get_current_win()
+	state.gui.buf = a.nvim_create_buf(false, true)
+	a.nvim_win_set_buf(state.gui.win, state.gui.buf)
 
-	return {
-		config = config,
-		html = html,
-		gui = gui,
-		data = {},
-	}
+	-- open rest of windows
+	local info = ts_html.get_info(state.html.buf)
+
+	-- style ( last window to use )
+	if config.layout.direction == "vertical" then
+		M.focus("html", state)
+		vim.cmd("vsplit " .. info.style)
+	else
+		M.focus("html", state)
+		vim.cmd("split " .. info.style)
+	end
+
+	state.style = {}
+	state.style.win = a.nvim_get_current_win()
+	state.style.buf = a.nvim_win_get_buf(state.style.win)
+	vim.cmd([[wincmd =]])
+
+	-- script ( last window to use )
+	if config.layout.direction == "vertical" then
+		M.focus("style", state)
+		vim.cmd("vsplit " .. info.script)
+	else
+		M.focus("style", state)
+		vim.cmd("split " .. info.script)
+	end
+
+	state.script = {}
+	state.script.win = a.nvim_get_current_win()
+	state.script.buf = a.nvim_win_get_buf(state.script.win)
+	vim.cmd([[wincmd =]])
+
+	return state
 end
 
 function M.load_script(buf)
@@ -72,12 +115,24 @@ end
 function M.set_autoreload(self)
 	-- reload everythin on save
 	local au_save = a.nvim_create_augroup("htmlgui_save", { clear = true })
-	a.nvim_create_autocmd("BufWritePost", {
+	a.nvim_create_autocmd({ "BufWritePost" }, {
 		group = au_save,
-		pattern = { "*.html" },
 		callback = function()
+			print("Resized/Saved")
 			self:render()
 			self:set_keys()
+			a.nvim_set_current_win(self.state.html.win)
+		end,
+	})
+
+	local au_resize = a.nvim_create_augroup("htmlgui_resize", { clear = true })
+	a.nvim_create_autocmd({ "WinResized", "VimResized" }, {
+		group = au_resize,
+		callback = function()
+			print("Resized/Saved")
+			self:render()
+			self:set_keys()
+			vim.cmd([[wincmd =]])
 		end,
 	})
 end
@@ -132,7 +187,7 @@ function M.render(self)
 		table.insert(self.state.data, data)
 	end
 
-	vim.opt.statusline = M.status_line(self.state.html.win, self.state.html.buf)
+	vim.opt.statusline = M.status_line(self.state.gui.win, self.state.html.buf)
 end
 
 local default_config = {
