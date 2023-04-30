@@ -4,10 +4,13 @@ end
 
 local M = {}
 M.state = {}
+M.custom = nil
+M.style = {}
 
 local a = vim.api
 local ts = vim.treesitter
 local parsers = require("nvim-treesitter.parsers")
+local map = vim.keymap.set
 
 function M.init()
 	-- create a split for html, one for gui
@@ -27,14 +30,41 @@ function M.init()
 		html = { win = html_win, buf = html_buf },
 		gui = { win = gui_win, buf = gui_buf },
 		root = root,
-    data = {}
+		data = {},
 	}
+	M.render()
 
-	local filename = vim.fs.basename(a.nvim_buf_get_name(html_buf))
-	local title = M.get_title(root, html_buf)
+	-- load custom lua
 	local script = M.get_script(root, html_buf)
-	local style = M.get_style(root, html_buf)
-	vim.opt.statusline = M.status_line(gui_win, title, filename, script, style)
+	script = string.sub(script, 1, string.len(script) - 4)
+	if pcall(function()
+		require("htmlgui." .. script)
+	end) then
+		M.custom = require("htmlgui." .. script)
+	end
+
+	-- M.state.data has all the divs
+	for _, div in pairs(M.state.data) do
+		if div.div.attrs ~= nil then
+			if vim.tbl_contains(vim.tbl_keys(div.div.attrs), "on:j") then
+				local callback = function()
+					local handle = M.custom[div.div.attrs["on:j"]]
+					handle(M.custom, { buf = div.buf, win = div.win, text = "Counting" })
+				end
+				map("n", "j", callback, { buffer = div.buf })
+			end
+		end
+	end
+
+	-- Highlight on yank
+	M.au_save = a.nvim_create_augroup("htmlgui_save", { clear = true })
+	a.nvim_create_autocmd("BufWritePost", {
+		group = M.au_save,
+		pattern = { "*.html" },
+		callback = function()
+			M.render()
+		end,
+	})
 end
 
 function M.get_root(buf)
@@ -43,7 +73,13 @@ function M.get_root(buf)
 	return root
 end
 
-function M.status_line(win, title, filename, script, style)
+function M.status_line(win, buf)
+	local root = M.get_root(buf)
+	local filename = vim.fs.basename(a.nvim_buf_get_name(buf))
+	local title = M.get_title(root, buf)
+	local script = M.get_script(root, buf)
+	local style = M.get_style(root, buf)
+
 	local width = a.nvim_win_get_width(win)
 	local right = string.format("❰  %s ❰  %s ❰  %s █", filename, style, script)
 	local nright = a.nvim_strwidth(right)
@@ -151,25 +187,43 @@ function M.get_divs(root, buf)
 	return tt
 end
 
-function M.get_width_height()
-	local stats = a.nvim_list_uis()[1]
-	local width = stats.width
-	local height = stats.height
+function M.parse_div(node, buf)
+	local tag = node:child()
+	local nattrs = tag:named_child_count() -- start_tag
+	local attrs = {}
+	for i = 1, nattrs - 1 do
+		local attr = tag:named_child(i)
+		local attr_key = ts.get_node_text(attr:named_child(0), buf)
+		local attr_value = ts.get_node_text(attr:named_child(1):named_child(0), buf)
+		attrs[attr_key] = attr_value
+	end
+	local text = ts.get_node_text(tag:next_named_sibling(), buf)
+	return { tag = "div", attrs = attrs, text = text }
+end
+
+function M.get_rect_from_div(div)
+	local parts = vim.split(div.attrs.style, ";")
+	local rect = {}
+	for _, v in ipairs(parts) do
+		local vv = vim.split(v, ":")
+		if vim.tbl_count(vv) == 2 then
+			rect[vim.trim(vv[1])] = tonumber(vim.trim(vv[2]))
+		end
+	end
+	return rect
+end
+
+function M.get_width_height(win)
+	local width = a.nvim_win_get_width(win)
+	local height = a.nvim_win_get_height(win)
 	return { width = width, height = height }
 end
 
-function M.get_centre_rect(fraction)
-	local size = M.get_width_height()
-	local width = math.ceil(size.width * fraction)
-	local height = math.ceil(size.height * fraction)
-	local col = math.ceil((size.width - width) / 2)
-	local row = math.ceil((size.height - height) / 2) - 1
-	return { col = col, row = row, width = width, height = height }
-end
-
-function M.create_win(rect)
+function M.create_div(div, parent_win)
+	local rect = M.get_rect_from_div(div)
 	local buf = a.nvim_create_buf(false, true)
-	local size = M.get_width_height()
+	a.nvim_buf_set_lines(buf, 0, -1, false, { div.text })
+	local size = M.get_width_height(parent_win)
 	if rect.col < 1 then
 		rect.col = math.ceil(size.width * rect.col)
 	end
@@ -188,7 +242,8 @@ function M.create_win(rect)
 	end
 
 	local opts = {
-		relative = "editor",
+		relative = "win",
+		win = parent_win,
 		col = rect.col,
 		row = rect.row,
 		width = rect.width,
@@ -197,7 +252,24 @@ function M.create_win(rect)
 		style = "minimal",
 	}
 	local win = a.nvim_open_win(buf, true, opts)
-	return { win = win, buf = buf }
+
+	-- listeners
+
+	return { div = div, win = win, buf = buf }
+end
+
+function M.render()
+	for _, s in ipairs(M.state.data) do
+		a.nvim_win_close(s.win, true)
+	end
+	M.state.data = {}
+	local body = M.get_body(M.state.html.buf)
+	for i = 2, vim.tbl_count(body:named_children()) - 1 do
+		local child = body:named_children()[i]
+		local div = M.parse_div(child, M.state.html.buf)
+		local data = M.create_div(div, M.state.gui.win)
+		table.insert(M.state.data, data)
+	end
 end
 
 return M
