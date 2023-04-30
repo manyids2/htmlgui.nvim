@@ -13,8 +13,6 @@ function M.sleep(n)
 end
 
 function M.focus(win_name, state)
-	vim.notify("focused " .. win_name)
-	P(state)
 	if state[win_name] ~= nil then
 		if state[win_name].win ~= nil then
 			a.nvim_set_current_win(state[win_name].win)
@@ -118,7 +116,6 @@ function M.set_autoreload(self)
 	a.nvim_create_autocmd({ "BufWritePost" }, {
 		group = au_save,
 		callback = function()
-			print("Resized/Saved")
 			self:render()
 			self:set_keys()
 			a.nvim_set_current_win(self.state.html.win)
@@ -129,10 +126,8 @@ function M.set_autoreload(self)
 	a.nvim_create_autocmd({ "WinResized", "VimResized" }, {
 		group = au_resize,
 		callback = function()
-			print("Resized/Saved")
 			self:render()
 			self:set_keys()
-			vim.cmd([[wincmd =]])
 		end,
 	})
 end

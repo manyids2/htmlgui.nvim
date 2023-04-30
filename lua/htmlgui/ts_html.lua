@@ -157,7 +157,7 @@ end
 
 function M.get_rect_from_div(div)
 	-- parse div to get style, with sane defaults
-	local rect = { row = 0.1, col = 0.1, width = 0.8, height = 0.8, zindex = 10 }
+	local rect = { row = 0.1, col = 0.1, width = 0.8, height = 0.8, zindex = 100 }
 	local parts = vim.split(div.attrs.style, ";")
 	for _, v in ipairs(parts) do
 		local vv = vim.split(v, ":")
