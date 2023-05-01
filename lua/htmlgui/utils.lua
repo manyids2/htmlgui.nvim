@@ -31,6 +31,9 @@ end
 
 function M.load_script(scriptpath)
 	-- load script file as lua module
+  if scriptpath == nil then
+    return
+  end
 	scriptpath = string.sub(scriptpath, 1, string.len(scriptpath) - 4)
 	if pcall(function()
 		require(scriptpath)
