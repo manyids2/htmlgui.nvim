@@ -7,6 +7,7 @@ Visualize an HTML page in neovim.
 - inbuilt debugger
 - hyperlinks with href
 - element definitions and defaults
+- schemes instead of background/foreground using treesitter
 
 ## So many details
 

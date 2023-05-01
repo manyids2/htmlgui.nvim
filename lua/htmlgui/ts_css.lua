@@ -16,7 +16,7 @@ M.default_style = {
   col = 0.1,
   width = 0.8,
   height = 0.8,
-  zindex = 100,
+  zindex = 20,
   color = "WildMenu",
 }
 
