@@ -1,6 +1,8 @@
 local a = vim.api
+local ts = vim.treesitter
 local map = vim.keymap.set
 local utils = require("htmlgui.utils")
+local ts_css = require("htmlgui.ts_css")
 local ts_html = require("htmlgui.ts_html")
 local div_html = require("htmlgui.html.div")
 
@@ -24,16 +26,24 @@ function M.setup(config)
 	config = utils.validate_config(config, default_config)
 
 	-- create layout
-	M.info = M.get_info(buf)
-	M.state = M.create_bufs_wins(config, M.info)
+	M.info = M.get_html_info(buf)
 	M.script = utils.load_script(M.info.script)
+	if config.debug then
+		M.state = M.create_bufs_wins_debug(config, M.info)
+	else
+		M.state = M.create_bufs_wins(config)
+	end
 
+	-- load css data
+	M.css = M.get_css_info(M.state.style.buf)
+
+	-- render
 	M:render()
 	M:set_keys()
 	M:set_autoreload()
 end
 
-function M.get_info(buf)
+function M.get_html_info(buf)
 	-- get info from html buffer
 	local lang = "html"
 	local root = utils.get_root(buf, lang)
@@ -51,7 +61,60 @@ function M.get_info(buf)
 	return info
 end
 
-function M.create_bufs_wins(config, info)
+function M.get_css_info(buf)
+	-- get info from css buffer
+	local lang = "css"
+	local root = utils.get_root(buf, lang)
+	local filename = vim.fs.basename(a.nvim_buf_get_name(buf))
+	local info = {
+		root = root,
+		filename = filename,
+		classes = ts_css.get_classes(root, buf, lang),
+	}
+	return info
+end
+
+function M.create_bufs_wins(config)
+	local state = {
+		config = config,
+		data = {},
+	}
+
+	-- basics
+	local win = a.nvim_get_current_win()
+	local buf = a.nvim_get_current_buf()
+
+	-- get names of script and style files
+	local info = M.get_html_info(buf)
+
+	-- save win and buf of gui
+	state.gui = {}
+	state.gui.win = win
+	state.gui.buf = a.nvim_create_buf(true, true)
+	a.nvim_buf_set_name(state.gui.buf, "gui")
+
+	-- html
+	state.html = {}
+	vim.cmd("e " .. info.filename)
+	state.html.buf = a.nvim_get_current_buf()
+
+	-- style
+	state.style = {}
+	vim.cmd("e " .. info.style)
+	state.style.buf = a.nvim_win_get_buf(win)
+
+	-- script
+	state.script = {}
+	vim.cmd("e " .. info.script)
+	state.script.buf = a.nvim_win_get_buf(win)
+
+	-- Focus gui buffer
+	a.nvim_set_current_buf(state.gui.buf)
+
+	return state
+end
+
+function M.create_bufs_wins_debug(config, info)
 	local state = {
 		config = config,
 		data = {},
@@ -75,8 +138,9 @@ function M.create_bufs_wins(config, info)
 	-- local wins = a.nvim_tabpage_list_wins(tabpage)
 	state.gui = {}
 	state.gui.win = a.nvim_get_current_win()
-	state.gui.buf = a.nvim_create_buf(false, true)
+	state.gui.buf = a.nvim_create_buf(true, true)
 	a.nvim_win_set_buf(state.gui.win, state.gui.buf)
+	a.nvim_buf_set_name(state.gui.buf, "gui")
 
 	-- style ( last window to use )
 	if config.layout.direction == "vertical" then
@@ -109,22 +173,29 @@ function M.create_bufs_wins(config, info)
 	return state
 end
 
-function M.status_line(win, info)
+function M.statusline(win, info, debug)
 	local width = a.nvim_win_get_width(win)
 
 	-- right side - files
-	local right = string.format("❰  %s ❰  %s ❰  %s █", info.filename, info.style, info.script)
+	local right, title
+	if debug then
+		right = string.format("❰  %s ❰  %s ❰  %s █", info.filename, info.style, info.script)
+		title = info.title
+	else
+		title = string.format(" %s", info.title)
+		right = "█"
+	end
 	local nright = a.nvim_strwidth(right)
 
 	-- calc padding
-	local ntitle = a.nvim_strwidth(info.title)
+	local ntitle = a.nvim_strwidth(title)
 	local nuni = a.nvim_strwidth("█")
 	local rem = width - ntitle - nright - nuni
 	local lpad = math.ceil(rem / 2)
 	local rpad = rem - lpad
 
 	-- left - centred title
-	local left = string.format("█%s%s%s", string.rep(" ", lpad), info.title, string.rep(" ", rpad))
+	local left = string.format("█%s%s%s", string.rep(" ", lpad), title, string.rep(" ", rpad))
 	return left .. right
 end
 
@@ -150,8 +221,8 @@ function M.render(self)
 		table.insert(self.state.data, data)
 	end
 
-	local info = self.get_info(self.state.html.buf)
-	vim.opt.statusline = M.status_line(self.state.gui.win, info)
+	local info = self.get_html_info(self.state.html.buf)
+	vim.opt.statusline = M.statusline(self.state.gui.win, info, self.state.config.debug)
 end
 
 function M.set_keys(self)
@@ -168,6 +239,9 @@ function M.set_keys(self)
 			if string.sub(key, 1, 3) == "on:" then
 				-- wrap to insert div as data to handler
 				local callback = function()
+					if script[value] == nil then
+						vim.notify("Could not set mapping: " .. value)
+					end
 					local handle = script[value]
 					if handle ~= nil then
 						handle(script, div)
@@ -183,7 +257,7 @@ function M.set_keys(self)
 end
 
 function M.set_autoreload(self)
-	-- reload everythin on save
+	-- reload everythin on save for debug
 	local au_save = a.nvim_create_augroup("htmlgui_save", { clear = true })
 	a.nvim_create_autocmd({ "BufWritePost" }, {
 		group = au_save,

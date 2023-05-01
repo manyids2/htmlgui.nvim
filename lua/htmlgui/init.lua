@@ -5,6 +5,7 @@ function P(x)
 end
 
 layout.setup({
+  debug = false,
 	layout = {
 		direction = "vertical",
 	},

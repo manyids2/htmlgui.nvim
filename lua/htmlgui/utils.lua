@@ -78,25 +78,7 @@ function M.get_text_from_range(range, buf)
 	return text
 end
 
-function M.get_first_match(query, root, buf, lang)
-	if lang == nil then
-		lang = "html"
-	end
-	local parsed_query = ts.query.parse(lang, query)
-	local s, _, e, _ = root:range()
-	for _, node, metadata in parsed_query:iter_captures(root, buf, s, e) do
-		local ids = vim.tbl_keys(metadata)
-		if vim.tbl_count(ids) > 0 then
-			metadata = metadata[ids[1]]
-		end
-		return { node = node, metadata = metadata }
-	end
-end
-
-function M.get_all_matches(query, root, buf, lang)
-	if lang == nil then
-		lang = "html"
-	end
+function M.get_matches(query, root, buf, lang)
 	local parsed_query = ts.query.parse(lang, query)
 	local s, _, e, _ = root:range()
 	local matches = {}
@@ -111,8 +93,10 @@ function M.get_all_matches(query, root, buf, lang)
 end
 
 function M.get_text_from_first_tag(query, root, buf, lang)
-	local tt = M.get_first_match(query, root, buf, lang)
-	return M.get_text_from_range(tt.metadata.range, buf)
+	local tt = M.get_matches(query, root, buf, lang)
+	if vim.tbl_count(tt) > 0 then
+		return M.get_text_from_range(tt[1].metadata.range, buf)
+	end
 end
 
 return M

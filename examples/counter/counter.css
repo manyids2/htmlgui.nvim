@@ -1,3 +1,7 @@
 .selected {
   background-color: red;
 }
+
+.left {
+  display: none;
+}

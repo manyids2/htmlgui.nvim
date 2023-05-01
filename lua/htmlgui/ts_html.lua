@@ -45,15 +45,15 @@ M.queries = {
 
 function M.get_body(buf)
 	local root = utils.get_root(buf, "html")
-	local tt = utils.get_first_match(M.queries.body, root, buf, "html")
+	local tt = utils.get_matches(M.queries.body, root, buf, "html")
 	-- HACK: unfortunately, not sure how to use treesitter here
-	return tt.node:parent():parent()
+	return tt[1].node:parent():parent()
 end
 
 -- TODO: Use this instead of only checking children of body
 function M.get_divs(buf)
 	local root = utils.get_root(buf, "html")
-	return utils.get_all_matches(M.queries.divs, root, buf)
+	return utils.get_matches(M.queries.divs, root, buf)
 end
 
 return M
