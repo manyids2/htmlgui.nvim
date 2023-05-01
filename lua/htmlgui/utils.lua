@@ -5,6 +5,12 @@ local parsers = require("nvim-treesitter.parsers")
 
 local M = {}
 
+function M.sleep(n)
+	local t0 = clock()
+	while clock() - t0 <= n do
+	end
+end
+
 function M.shallow_copy(t)
 	local t2 = {}
 	for k, v in pairs(t) do
@@ -34,10 +40,17 @@ function M.load_script(scriptpath)
 	end
 end
 
-function M.sleep(n)
-	local t0 = clock()
-	while clock() - t0 <= n do
+function M.clean_up_text(text, remove_parens)
+	if remove_parens then
+		text = vim.trim(string.gsub(text, "{", ""))
+		text = vim.trim(string.gsub(text, "}", ""))
 	end
+	local lines = vim.split(text, "\n")
+	local clean = {}
+	for _, line in pairs(lines) do
+		table.insert(clean, vim.trim(line))
+	end
+	return table.concat(clean, " ")
 end
 
 function M.focus(win_name, state)

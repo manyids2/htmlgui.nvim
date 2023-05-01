@@ -1,5 +1,6 @@
 local a = vim.api
 local ts = vim.treesitter
+local utils = require("htmlgui.utils")
 
 local M = {}
 
@@ -18,57 +19,44 @@ function M.parse_div(node, buf)
 		local attr = tag:named_child(i)
 		local attr_key = ts.get_node_text(attr:named_child(0), buf)
 		local attr_value = ts.get_node_text(attr:named_child(1):named_child(0), buf)
-		attrs[attr_key] = attr_value
+		attrs[attr_key] = utils.clean_up_text(attr_value)
 	end
 	local text = ts.get_node_text(tag:next_named_sibling(), buf)
 	return { tag = "div", attrs = attrs, text = text }
 end
 
-function M.get_rect_from_div(div)
-	-- parse div to get style, with sane defaults
-	local rect = { row = 0.1, col = 0.1, width = 0.8, height = 0.8, zindex = 100 }
-	local parts = vim.split(div.attrs.style, ";")
-	for _, v in ipairs(parts) do
-		local vv = vim.split(v, ":")
-		if vim.tbl_count(vv) == 2 then
-			rect[vim.trim(vv[1])] = tonumber(vim.trim(vv[2]))
-		end
-	end
-	return rect
-end
-
-function M.create_div(div, parent_win)
+function M.create_div(div, style, parent_win)
 	-- create buffer with div text
-	local rect = M.get_rect_from_div(div)
 	local buf = a.nvim_create_buf(false, true)
 	a.nvim_buf_set_lines(buf, 0, -1, false, { div.text })
 
+  -- this changes style as well?
 	local size = M.get_width_height(parent_win)
-	if rect.col < 1 then
-		rect.col = math.ceil(size.width * rect.col)
+	if style.col < 1 then
+		style.col = math.ceil(size.width * style.col)
 	end
-	if rect.row < 1 then
-		rect.row = math.ceil(size.height * rect.row)
+	if style.row < 1 then
+		style.row = math.ceil(size.height * style.row)
 	end
-	if rect.height < 1 then
-		rect.height = math.ceil(size.height * rect.height)
+	if style.height < 1 then
+		style.height = math.ceil(size.height * style.height)
 	end
-	if rect.width < 1 then
-		rect.width = math.ceil(size.width * rect.width)
+	if style.width < 1 then
+		style.width = math.ceil(size.width * style.width)
 	end
 
-	if rect.zindex == nil then
-		rect.zindex = 10
+	if style.zindex == nil then
+		style.zindex = 10
 	end
 
 	local opts = {
 		relative = "win",
 		win = parent_win,
-		col = rect.col,
-		row = rect.row,
-		width = rect.width,
-		height = rect.height,
-		zindex = rect.zindex,
+		col = style.col,
+		row = style.row,
+		width = style.width,
+		height = style.height,
+		zindex = style.zindex,
 		style = "minimal",
 	}
 	local win = a.nvim_open_win(buf, true, opts)
