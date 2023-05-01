@@ -221,38 +221,13 @@ function M.render(self)
     local child = body:named_children()[i]
 
     -- read and get div info from html { tag, attrs, text }
-    local style = {}
+    -- NOTE: actually works for any tag with style, etc
     local div = div_html.parse_div(child, self.state.html.buf)
 
-    -- for css, check class
-    if div.attrs.class ~= nil then
-      local name = div.attrs.class
-      local css_style = {}
-      if css.classes[name] ~= nil then
-        css_style = ts_css.get_style_table(css.classes[name].text)
-      end
-
-      -- add to style
-      for key, value in pairs(css_style) do
-        style[key] = value
-      end
-    end
-
-    -- override with inline
-    local inline_style = {}
-    if div.attrs.style ~= nil then
-      inline_style = ts_css.get_style_table(div.attrs.style)
-    end
-    for key, value in pairs(inline_style) do
-      style[key] = value
-    end
-
-    -- extend with defaults
-    style = vim.tbl_extend("keep", style, ts_css.default_style)
-    style = ts_css.clean_up_style(style)
+    -- override css styles with inline style
+    div.attrs.style = ts_css.get_style_for_element(div, css)
 
     -- render to gui { div, win, buf }
-    div.attrs.style = style
     local data = div_html.create_div(div, self.state.gui.win, M.config, M.state)
 
     -- keep track

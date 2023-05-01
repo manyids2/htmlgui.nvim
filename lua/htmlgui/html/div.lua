@@ -12,6 +12,8 @@ function M.get_width_height(win)
 end
 
 function M.parse_div(node, buf)
+  local div = { node = node }
+  -- node:type() = element
   local tag = node:child()
   local nattrs = tag:named_child_count() -- start_tag
   local attrs = {}
@@ -22,14 +24,60 @@ function M.parse_div(node, buf)
     local attr_value = ts.get_node_text(attr:named_child(1):named_child(0), buf)
     attrs[attr_key] = utils.clean_up_text(attr_value)
   end
-  local text = ts.get_node_text(tag:next_named_sibling(), buf)
-  return { tag = "div", attrs = attrs, text = text }
+  div.attrs = attrs
+
+  local tagname = (ts.get_node_text(tag:named_child(), buf))
+  div.tag = tagname
+
+  -- if ul, then put in temp buffer and parse with ts
+  -- BUG: only gets first line, need to get range from start and end tags
+  if tagname == "ul" then
+    -- get relevant lines
+    local text = ts.get_node_text(div.node, buf)
+    local lines = vim.split(utils.clean_up_text(text, false, "\n"), "\n")
+
+    -- create temp buffer
+    local temp_buf = a.nvim_create_buf(false, true)
+    a.nvim_buf_set_lines(temp_buf, -1, -1, false, lines)
+
+    -- get ul in temp_buf
+    local lang = "html"
+    local root = utils.get_root(temp_buf, lang)
+    local ul = root:named_child(0)
+
+    -- iterate to get li
+    lines = {}
+    for i = 1, vim.tbl_count(ul:named_children()) - 1 do
+      local child = ul:named_child(i)
+      for j = 1, vim.tbl_count(child:named_children()) - 2 do
+        text = ts.get_node_text(child:named_child(j), temp_buf)
+        table.insert(lines, text)
+      end
+    end
+
+    -- clean up temp buffer
+    a.nvim_buf_delete(temp_buf, { force = true })
+
+    -- put into div
+    local cool_items = {}
+    for _, line in ipairs(lines) do
+      table.insert(cool_items, string.format("  🍎  %s", line))
+    end
+
+    div.text = text
+    div.lines = cool_items
+  else
+    div.text = ts.get_node_text(tag:next_named_sibling(), buf)
+    div.lines = { div.text }
+  end
+
+  return div
 end
 
 function M.create_div(div, parent_win, app_config, app_state)
   -- create buffer with div text
   local buf = a.nvim_create_buf(false, true)
-  a.nvim_buf_set_lines(buf, 0, -1, false, { div.text })
+  a.nvim_buf_set_lines(buf, 0, -1, false, div.lines)
 
   -- this changes style as well?
   local style = div.attrs.style
