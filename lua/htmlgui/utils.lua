@@ -105,55 +105,50 @@ function M.get_win_opts(style, parent_win)
 end
 
 function M.lines_to_full_size(lines, size, style)
-	local switch = function(choice)
-		choice = choice and tonumber(choice) or choice
-		local cases = {
-			center = function()
-				-- assuming style is center for now
-				local lheight = vim.tbl_count(lines)
-				local wwidth = size.width
-				local wheight = size.height
+	local lheight = vim.tbl_count(lines)
+	local wwidth = size.width
+	local wheight = size.height
+	local empty = string.rep(" ", size.width)
+	local slines = {}
 
-				-- get top padding
-				local empty = string.rep(" ", size.width)
-				local tpad = math.ceil((wheight - lheight) / 2)
-				local slines = {}
-				for _ = 1, tpad, 1 do
-					table.insert(slines, empty)
-				end
-
-				-- get left and right padding
-				for _, line in pairs(lines) do
-					local lwidth = vim.api.nvim_strwidth(line)
-					local lpad = math.ceil((wwidth - lwidth) / 2)
-					local rpad = wwidth - lwidth - lpad
-					local newline = string.rep(" ", lpad) .. line .. string.rep(" ", rpad)
-					table.insert(slines, newline)
-				end
-
-				-- get bottom padding
-				local bpad = wheight - lheight - tpad
-				for _ = 1, bpad, 1 do
-					table.insert(slines, empty)
-				end
-				return slines
-			end,
-			left = function()
-				return lines
-			end,
-			default = function()
-				return lines
-			end,
-		}
-
-		if cases[choice] then
-			return cases[choice]()
-		else
-			return cases["default"]()
-		end
+	-- get top and bottom padding
+	local tpad, bpad
+	if style.justify_content == "center" then
+		tpad = math.ceil((wheight - lheight) / 2)
+	elseif style.justify_content == "bottom" then
+    tpad = wheight - lheight
+	else -- default : top
+    tpad = 0
 	end
 
-	return switch(style.align)
+	for _ = 1, tpad, 1 do
+		table.insert(slines, empty)
+	end
+
+	-- get left and right padding
+	local lpad, rpad
+	for _, line in pairs(lines) do
+		local lwidth = vim.api.nvim_strwidth(line)
+		if style.align_items == "center" then
+			lpad = math.ceil((wwidth - lwidth) / 2)
+			rpad = wwidth - lwidth - lpad
+		elseif style.align_items == "right" then
+			lpad = wwidth - lwidth
+			rpad = 0
+		else -- default : left
+			lpad = 0
+			rpad = wwidth - lwidth
+		end
+		local newline = string.rep(" ", lpad) .. line .. string.rep(" ", rpad)
+		table.insert(slines, newline)
+	end
+
+	bpad = wheight - lheight - tpad
+	for _ = 1, bpad, 1 do
+		table.insert(slines, empty)
+	end
+
+	return slines
 end
 
 function M.get_root(buf, lang)

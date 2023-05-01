@@ -1,6 +1,7 @@
 .selected {
-  background-color: #ff0000;
-  row: 0.0;
+  color: IncSearch;
+  align-items: right;
+  justify-content: bottom;
 }
 
 .left {

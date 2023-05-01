@@ -18,7 +18,8 @@ M.default_style = {
   height = 0.8,
   zindex = 20,
   color = "NormalFloat",
-  align = "left",
+  align_items = "center",
+  justify_content = "center",
 }
 
 M.type_numbers = { "row", "col", "height", "width", "zindex" }
