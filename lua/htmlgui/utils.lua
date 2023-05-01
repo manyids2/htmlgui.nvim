@@ -75,35 +75,85 @@ function M.get_width_height(win)
 	return { width = width, height = height }
 end
 
+function M.get_win_opts(style, parent_win)
+	-- this changes style as well?
+	local size = M.get_width_height(parent_win)
+	if style.col < 1 then
+		style.col = math.ceil(size.width * style.col)
+	end
+	if style.row < 1 then
+		style.row = math.ceil(size.height * style.row)
+	end
+	if style.height < 1 then
+		style.height = math.ceil(size.height * style.height)
+	end
+	if style.width < 1 then
+		style.width = math.ceil(size.width * style.width)
+	end
+
+	local opts = {
+		relative = "win",
+		win = parent_win,
+		col = style.col,
+		row = style.row,
+		width = style.width,
+		height = style.height,
+		zindex = style.zindex,
+		style = "minimal",
+	}
+	return opts
+end
+
 function M.lines_to_full_size(lines, size, style)
-	-- assuming style is center for now
-	local lheight = vim.tbl_count(lines)
-	local wwidth = size.width
-	local wheight = size.height
+	local switch = function(choice)
+		choice = choice and tonumber(choice) or choice
+		local cases = {
+			center = function()
+				-- assuming style is center for now
+				local lheight = vim.tbl_count(lines)
+				local wwidth = size.width
+				local wheight = size.height
 
-	-- get top padding
-  local empty = string.rep(" ", size.width)
-	local tpad = math.ceil((wheight - lheight) / 2)
-	local slines = {}
-	for _ = 1, tpad, 1 do
-		table.insert(slines, empty)
+				-- get top padding
+				local empty = string.rep(" ", size.width)
+				local tpad = math.ceil((wheight - lheight) / 2)
+				local slines = {}
+				for _ = 1, tpad, 1 do
+					table.insert(slines, empty)
+				end
+
+				-- get left and right padding
+				for _, line in pairs(lines) do
+					local lwidth = vim.api.nvim_strwidth(line)
+					local lpad = math.ceil((wwidth - lwidth) / 2)
+					local rpad = wwidth - lwidth - lpad
+					local newline = string.rep(" ", lpad) .. line .. string.rep(" ", rpad)
+					table.insert(slines, newline)
+				end
+
+				-- get bottom padding
+				local bpad = wheight - lheight - tpad
+				for _ = 1, bpad, 1 do
+					table.insert(slines, empty)
+				end
+				return slines
+			end,
+			left = function()
+				return lines
+			end,
+			default = function()
+				return lines
+			end,
+		}
+
+		if cases[choice] then
+			return cases[choice]()
+		else
+			return cases["default"]()
+		end
 	end
 
-	-- get left and right padding
-	for _, line in pairs(lines) do
-		local lwidth = vim.api.nvim_strwidth(line)
-		local lpad = math.ceil((wwidth - lwidth) / 2)
-		local rpad = wwidth - lwidth - lpad
-		local newline = string.rep(" ", lpad) .. line .. string.rep(" ", rpad)
-		table.insert(slines, newline)
-	end
-
-	-- get bottom padding
-	local bpad = wheight - lheight - tpad
-	for _ = 1, bpad, 1 do
-		table.insert(slines, empty)
-	end
-	return slines
+	return switch(style.align)
 end
 
 function M.get_root(buf, lang)

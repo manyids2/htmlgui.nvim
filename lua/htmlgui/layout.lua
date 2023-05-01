@@ -3,7 +3,7 @@ local map = vim.keymap.set
 local utils = require("htmlgui.utils")
 local ts_css = require("htmlgui.ts_css")
 local ts_html = require("htmlgui.ts_html")
-local div_html = require("htmlgui.html.div")
+local element_html = require("htmlgui.html.element")
 
 local M = {}
 
@@ -231,20 +231,20 @@ function M.render(self)
 		css = M.get_css_info(M.state.style.buf)
 	end
 
-	-- TODO: for now, create divs for each direct child of body
+	-- TODO: for now, create elements for each direct child of body
 	local body = ts_html.get_body(self.state.html.buf)
 	for i = 2, vim.tbl_count(body:named_children()) - 1 do
 		local child = body:named_children()[i]
 
-		-- read and get div info from html { tag, attrs, text }
+		-- read and get element info from html { tag, attrs, text }
 		-- NOTE: actually works for any tag with style, etc
-		local div = div_html.parse_div(child, self.state.html.buf)
+		local element = element_html.parse_element(child, self.state.html.buf)
 
 		-- override css styles with inline style
-		div.attrs.style = ts_css.get_style_for_element(div, css)
+		element.attrs.style = ts_css.get_style_for_element(element, css)
 
-		-- render to gui { div, win, buf }
-		local data = div_html.create_div(div, self.state.gui.win, M.config, M.state)
+		-- render to gui { element, win, buf }
+		local data = element_html.create_element(element, self.state.gui.win, M.config, M.state)
 
 		-- keep track
 		table.insert(self.state.data, data)
@@ -255,18 +255,18 @@ function M.render(self)
 end
 
 function M.set_keys(self)
-	local divs = self.state.data
+	local elements = self.state.data
 	local script = self.script
-	for _, div in pairs(divs) do
-		if div.div.attrs == nil then
+	for _, element in pairs(elements) do
+		if element.element.attrs == nil then
 			return
 		end
 
-		-- div = { div = .., rect = .., data = .. }
-		for key, value in pairs(div.div.attrs) do
+		-- element = { element = .., rect = .., data = .. }
+		for key, value in pairs(element.element.attrs) do
 			-- get only callbacks
 			if string.sub(key, 1, 3) == "on:" then
-				-- wrap to insert div as data to handler
+				-- wrap to insert element as data to handler
 				local callback = function()
 					if script ~= nil then
 						if script[value] == nil then
@@ -274,14 +274,14 @@ function M.set_keys(self)
 						end
 						local handle = script[value]
 						if handle ~= nil then
-							handle(script, div)
+							handle(script, element)
 						end
 					end
 				end
 
 				-- apply keymap for buffer
 				local lhs = string.sub(key, 4)
-				map("n", lhs, callback, { buffer = div.buf })
+				map("n", lhs, callback, { buffer = element.buf })
 			end
 		end
 	end
@@ -328,7 +328,7 @@ function M.close(s)
 end
 
 function M.destroy(state)
-	-- remove all divs
+	-- remove all elements
 	for _, s in ipairs(state.data) do
 		a.nvim_win_close(s.win, true)
 	end

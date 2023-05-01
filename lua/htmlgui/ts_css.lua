@@ -17,7 +17,8 @@ M.default_style = {
   width = 0.8,
   height = 0.8,
   zindex = 20,
-  color = "WildMenu",
+  color = "NormalFloat",
+  align = "left",
 }
 
 M.type_numbers = { "row", "col", "height", "width", "zindex" }
