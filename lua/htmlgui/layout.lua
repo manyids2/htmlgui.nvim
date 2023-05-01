@@ -3,30 +3,52 @@ local map = vim.keymap.set
 local utils = require("htmlgui.utils")
 local ts_html = require("htmlgui.ts_html")
 local div_html = require("htmlgui.html.div")
-local clock = os.clock
 
 local M = {}
 
-function M.sleep(n)
-	local t0 = clock()
-	while clock() - t0 <= n do
+local default_config = {
+	layout = {
+		direction = "vertical",
+	},
+}
+
+function M.setup(config)
+	-- return if not html file
+	local buf = a.nvim_get_current_buf()
+	local filename = vim.fs.basename(a.nvim_buf_get_name(buf))
+	if not vim.endswith(filename, "html") then
+		return
 	end
+
+	-- set sane defaults
+	config = utils.validate_config(config, default_config)
+
+	-- create layout
+	M.state = M.create_bufs_wins(config)
+	M.info = ts_html.get_info(M.state.html.buf)
+	M.script = utils.load_script(M.info.script)
+
+	M:render()
+	M:set_keys()
+	M:set_autoreload()
 end
 
-function M.focus(win_name, state)
-	if state[win_name] ~= nil then
-		if state[win_name].win ~= nil then
-			a.nvim_set_current_win(state[win_name].win)
-		else
-			vim.notify("Unknown name :" .. win_name, vim.log.levels.ERROR)
-		end
-	end
-end
-
-function M.get_width_height(win)
-	local width = a.nvim_win_get_width(win)
-	local height = a.nvim_win_get_height(win)
-	return { width = width, height = height }
+function M.get_info(buf)
+	-- get info from html buffer
+	local lang = "html"
+	local root = utils.get_root(buf, lang)
+	local title = utils.get_text_from_first_tag(ts_html.queries.title, root, buf, lang)
+	local script = utils.get_text_from_first_tag(ts_html.queries.script, root, buf, lang)
+	local style = utils.get_text_from_first_tag(ts_html.queries.style, root, buf, lang)
+	local filename = vim.fs.basename(a.nvim_buf_get_name(buf))
+	local info = {
+		root = root,
+		title = title,
+		script = script,
+		style = style,
+		filename = filename,
+	}
+	return info
 end
 
 function M.create_bufs_wins(config)
@@ -61,10 +83,10 @@ function M.create_bufs_wins(config)
 
 	-- style ( last window to use )
 	if config.layout.direction == "vertical" then
-		M.focus("html", state)
+		utils.focus("html", state)
 		vim.cmd("vsplit " .. info.style)
 	else
-		M.focus("html", state)
+		utils.focus("html", state)
 		vim.cmd("split " .. info.style)
 	end
 
@@ -75,10 +97,10 @@ function M.create_bufs_wins(config)
 
 	-- script ( last window to use )
 	if config.layout.direction == "vertical" then
-		M.focus("style", state)
+		utils.focus("style", state)
 		vim.cmd("vsplit " .. info.script)
 	else
-		M.focus("style", state)
+		utils.focus("style", state)
 		vim.cmd("split " .. info.script)
 	end
 
@@ -90,55 +112,49 @@ function M.create_bufs_wins(config)
 	return state
 end
 
-function M.load_script(buf)
-	-- load script file as lua module
-	local scriptpath = ts_html.get_script(ts_html.get_root(buf), buf)
-	scriptpath = string.sub(scriptpath, 1, string.len(scriptpath) - 4)
-	if pcall(function()
-		require(scriptpath)
-	end) then
-		local script = require(scriptpath)
-		return script
-	end
-end
-
-function M.status_line(win, buf)
-	-- show fancy status line
-	local info = ts_html.get_info(buf)
+function M.status_line(win, info)
 	local width = a.nvim_win_get_width(win)
+
+  -- right side - files
 	local right = string.format("❰  %s ❰  %s ❰  %s █", info.filename, info.style, info.script)
 	local nright = a.nvim_strwidth(right)
+
+  -- calc padding
 	local ntitle = a.nvim_strwidth(info.title)
 	local nuni = a.nvim_strwidth("█")
 	local rem = width - ntitle - nright - nuni
 	local lpad = math.ceil(rem / 2)
 	local rpad = rem - lpad
+
+  -- left - centred title
 	local left = string.format("█%s%s%s", string.rep(" ", lpad), info.title, string.rep(" ", rpad))
 	return left .. right
 end
 
-function M.set_autoreload(self)
-	-- reload everythin on save
-	local au_save = a.nvim_create_augroup("htmlgui_save", { clear = true })
-	a.nvim_create_autocmd({ "BufWritePost" }, {
-		group = au_save,
-		callback = function()
-			self:render()
-			self:set_keys()
-			a.nvim_set_current_win(self.state.html.win)
-		end,
-	})
+function M.render(self)
+	-- reset all windows
+	for _, s in ipairs(self.state.data) do
+		a.nvim_win_close(s.win, true)
+	end
+	self.state.data = {}
 
-	local au_resize = a.nvim_create_augroup("htmlgui_resize", { clear = true })
-	a.nvim_create_autocmd({ "WinResized", "VimResized" }, {
-		group = au_resize,
-		callback = function()
-			local current_win = a.nvim_get_current_win()
-			self:render()
-			self:set_keys()
-			a.nvim_set_current_win(current_win)
-		end,
-	})
+	-- TODO: for now, create divs for each direct child of body
+	local body = ts_html.get_body(self.state.html.buf)
+	for i = 2, vim.tbl_count(body:named_children()) - 1 do
+		local child = body:named_children()[i]
+
+		-- read and get div info from html { tag, attrs, text }
+		local div = div_html.parse_div(child, self.state.html.buf)
+
+		-- render to gui { div, win, buf }
+		local data = div_html.create_div(div, self.state.gui.win)
+
+		-- keep track
+		table.insert(self.state.data, data)
+	end
+
+	local info = self.get_info(self.state.html.buf)
+	vim.opt.statusline = M.status_line(self.state.gui.win, info)
 end
 
 function M.set_keys(self)
@@ -169,55 +185,28 @@ function M.set_keys(self)
 	end
 end
 
-function M.render(self)
-	-- reset all windows
-	for _, s in ipairs(self.state.data) do
-		a.nvim_win_close(s.win, true)
-	end
-	self.state.data = {}
+function M.set_autoreload(self)
+	-- reload everythin on save
+	local au_save = a.nvim_create_augroup("htmlgui_save", { clear = true })
+	a.nvim_create_autocmd({ "BufWritePost" }, {
+		group = au_save,
+		callback = function()
+			self:render()
+			self:set_keys()
+			a.nvim_set_current_win(self.state.html.win)
+		end,
+	})
 
-	-- NOTE: create divs for each direct child of body
-	local body = ts_html.get_body(self.state.html.buf)
-	for i = 2, vim.tbl_count(body:named_children()) - 1 do
-		local child = body:named_children()[i]
-
-		-- read and get div info from html { tag, attrs, text }
-		local div = div_html.parse_div(child, self.state.html.buf)
-
-		-- render to gui { div, win, buf }
-		local data = div_html.create_div(div, self.state.gui.win)
-
-		-- keep track
-		table.insert(self.state.data, data)
-	end
-
-	vim.opt.statusline = M.status_line(self.state.gui.win, self.state.html.buf)
-end
-
-local default_config = {
-	layout = {
-		direction = "vertical",
-	},
-}
-
-function M.setup(config)
-	-- return if not html file
-	local buf = a.nvim_get_current_buf()
-	local filename = vim.fs.basename(a.nvim_buf_get_name(buf))
-	if not vim.endswith(filename, "html") then
-		return
-	end
-
-	-- set sane defaults
-	config = utils.validate_config(config, default_config)
-
-	-- create layout
-	M.state = M.create_bufs_wins(config)
-	M.script = M.load_script(M.state.html.buf)
-
-	M:render()
-	M:set_keys()
-	M:set_autoreload()
+	local au_resize = a.nvim_create_augroup("htmlgui_resize", { clear = true })
+	a.nvim_create_autocmd({ "WinResized", "VimResized" }, {
+		group = au_resize,
+		callback = function()
+			local current_win = a.nvim_get_current_win()
+			self:render()
+			self:set_keys()
+			a.nvim_set_current_win(current_win)
+		end,
+	})
 end
 
 return M

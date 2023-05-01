@@ -1,3 +1,8 @@
+local a = vim.api
+local ts = vim.treesitter
+local clock = os.clock
+local parsers = require("nvim-treesitter.parsers")
+
 local M = {}
 
 function M.shallow_copy(t)
@@ -16,6 +21,98 @@ function M.validate_config(config, default_config)
 	vim.validate({ config = { config, "table" } })
 	config = vim.tbl_extend("keep", config, default_config)
 	return M.shallow_copy(config)
+end
+
+function M.load_script(scriptpath)
+	-- load script file as lua module
+	scriptpath = string.sub(scriptpath, 1, string.len(scriptpath) - 4)
+	if pcall(function()
+		require(scriptpath)
+	end) then
+		local script = require(scriptpath)
+		return script
+	end
+end
+
+function M.sleep(n)
+	local t0 = clock()
+	while clock() - t0 <= n do
+	end
+end
+
+function M.focus(win_name, state)
+	if state[win_name] ~= nil then
+		if state[win_name].win ~= nil then
+			a.nvim_set_current_win(state[win_name].win)
+		else
+			vim.notify("Unknown name :" .. win_name, vim.log.levels.ERROR)
+		end
+	end
+end
+
+function M.get_width_height(win)
+	local width = a.nvim_win_get_width(win)
+	local height = a.nvim_win_get_height(win)
+	return { width = width, height = height }
+end
+
+function M.get_root(buf, lang)
+	if lang == nil then
+		lang = "html"
+	end
+	local parser = parsers.get_parser(buf, lang)
+	return parser:parse()[1]:root()
+end
+
+function M.get_text_from_range(range, buf)
+	-- simple trim and concat
+	local lines = a.nvim_buf_get_text(buf, range[1], range[2], range[3], range[4], {})
+	local text = ""
+	if vim.tbl_count(lines) > 1 then
+		vim.tbl_map(function(line)
+			text = text .. vim.trim(line)
+		end, lines)
+	else
+		text = lines[1]
+	end
+	return text
+end
+
+function M.get_first_match(query, root, buf, lang)
+	if lang == nil then
+		lang = "html"
+	end
+	local parsed_query = ts.query.parse(lang, query)
+	local s, _, e, _ = root:range()
+	for _, node, metadata in parsed_query:iter_captures(root, buf, s, e) do
+		local ids = vim.tbl_keys(metadata)
+		if vim.tbl_count(ids) > 0 then
+			metadata = metadata[ids[1]]
+		end
+		return { node = node, metadata = metadata }
+	end
+end
+
+function M.get_all_matches(query, root, buf, lang)
+	if lang == nil then
+		lang = "html"
+	end
+	local parsed_query = ts.query.parse(lang, query)
+	local s, _, e, _ = root:range()
+	local matches = {}
+	for _, node, metadata in parsed_query:iter_captures(root, buf, s, e) do
+		local ids = vim.tbl_keys(metadata)
+		if vim.tbl_count(ids) > 0 then
+			metadata = metadata[ids[1]]
+		end
+		table.insert(matches, { node = node, metadata = metadata })
+	end
+	return matches
+end
+
+function M.get_text_from_first_tag(query, root, buf, lang)
+	local tt = M.get_first_match(query, root, buf, lang)
+	return M.get_text_from_range(tt.metadata.range, buf)
 end
 
 return M
