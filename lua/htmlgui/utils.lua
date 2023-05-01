@@ -36,10 +36,9 @@ function M.load_script(scriptpath)
 	end
 	scriptpath = string.sub(scriptpath, 1, string.len(scriptpath) - 4)
 	if pcall(function()
-		require(scriptpath)
+		return require(scriptpath)
 	end) then
-		local script = require(scriptpath)
-		return script
+		return require(scriptpath)
 	end
 end
 
@@ -116,9 +115,9 @@ function M.lines_to_full_size(lines, size, style)
 	if style.justify_content == "center" then
 		tpad = math.ceil((wheight - lheight) / 2)
 	elseif style.justify_content == "bottom" then
-    tpad = wheight - lheight
+		tpad = wheight - lheight
 	else -- default : top
-    tpad = 0
+		tpad = 0
 	end
 
 	for _ = 1, tpad, 1 do

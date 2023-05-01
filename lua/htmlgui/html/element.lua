@@ -3,6 +3,7 @@ local ts = vim.treesitter
 local map = vim.keymap.set
 local utils = require("htmlgui.utils")
 local html_ul = require("htmlgui.html.ul")
+local html_a = require("htmlgui.html.a")
 
 local M = {}
 
@@ -51,10 +52,7 @@ function M.create_element(element, parent_win, app_config, app_state)
 
 	-- if href, then provide keymap
 	if element.attrs.href ~= nil then
-		map("n", "<enter>", function()
-			require("htmlgui.layout").destroy(app_state)
-			require("htmlgui.layout").setup(app_config, element.attrs.href)
-		end, { buffer = buf })
+		html_a.set_keymaps(element, buf, app_state, app_config)
 	else
 		map("n", "<enter>", function() end, { buffer = buf })
 	end
@@ -64,6 +62,12 @@ function M.create_element(element, parent_win, app_config, app_state)
 	a.nvim_buf_clear_namespace(buf, -1, 0, -1)
 	for i = 0, size.height, 1 do
 		a.nvim_buf_add_highlight(buf, -1, hl_name, i, 0, -1)
+	end
+
+	-- mark hrefs
+	if element.attrs.href ~= nil then
+		a.nvim_buf_clear_namespace(buf, -1, size.height - 1, size.height)
+		a.nvim_buf_add_highlight(buf, -1, "DiagnosticFloatingHint", size.height - 1, 0, 1)
 	end
 
 	return { element = element, win = win, buf = buf }

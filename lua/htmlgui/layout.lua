@@ -275,6 +275,7 @@ function M.set_keys(self)
 						local handle = script[value]
 						if handle ~= nil then
 							handle(script, element)
+              -- rerender relevant component with only state changed
 						end
 					end
 				end
@@ -282,6 +283,11 @@ function M.set_keys(self)
 				-- apply keymap for buffer
 				local lhs = string.sub(key, 4)
 				map("n", lhs, callback, { buffer = element.buf })
+
+				-- mark visually
+				local size = utils.get_width_height(element.win)
+				a.nvim_buf_clear_namespace(element.buf, -1, size.height - 1, size.height)
+				a.nvim_buf_add_highlight(element.buf, -1, "DiagnosticFloatingHint", size.height - 1, 0, 1)
 			end
 		end
 	end
@@ -293,6 +299,10 @@ function M.set_autoreload(self)
 	a.nvim_create_autocmd({ "BufWritePost" }, {
 		group = au_save,
 		callback = function()
+      -- TODO: how to properly reload?
+			-- require("plenary.reload").reload_module(self.info.script, false)
+      package.loaded[self.info.script] = nil
+			self.script = utils.load_script(self.info.script)
 			self:render()
 			self:set_keys()
 		end,
