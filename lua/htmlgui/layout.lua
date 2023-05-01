@@ -2,6 +2,7 @@ local a = vim.api
 local map = vim.keymap.set
 local utils = require("htmlgui.utils")
 local ts_html = require("htmlgui.ts_html")
+local div_html = require("htmlgui.html.div")
 local clock = os.clock
 
 local M = {}
@@ -20,6 +21,12 @@ function M.focus(win_name, state)
 			vim.notify("Unknown name :" .. win_name, vim.log.levels.ERROR)
 		end
 	end
+end
+
+function M.get_width_height(win)
+	local width = a.nvim_win_get_width(win)
+	local height = a.nvim_win_get_height(win)
+	return { width = width, height = height }
 end
 
 function M.create_bufs_wins(config)
@@ -126,10 +133,10 @@ function M.set_autoreload(self)
 	a.nvim_create_autocmd({ "WinResized", "VimResized" }, {
 		group = au_resize,
 		callback = function()
-      local current_win = a.nvim_get_current_win()
+			local current_win = a.nvim_get_current_win()
 			self:render()
 			self:set_keys()
-      a.nvim_set_current_win(current_win)
+			a.nvim_set_current_win(current_win)
 		end,
 	})
 end
@@ -175,10 +182,10 @@ function M.render(self)
 		local child = body:named_children()[i]
 
 		-- read and get div info from html { tag, attrs, text }
-		local div = ts_html.parse_div(child, self.state.html.buf)
+		local div = div_html.parse_div(child, self.state.html.buf)
 
 		-- render to gui { div, win, buf }
-		local data = ts_html.create_div(div, self.state.gui.win)
+		local data = div_html.create_div(div, self.state.gui.win)
 
 		-- keep track
 		table.insert(self.state.data, data)
