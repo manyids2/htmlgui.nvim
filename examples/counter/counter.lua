@@ -5,8 +5,8 @@ M.state = { count = 1 }
 
 function M.handle_j(self, data)
   self.state.count = self.state.count + 1
-  local text = string.format("%s %d", data.element.text, self.state.count)
-  a.nvim_buf_set_lines(data.buf, 0, -1, false, { text })
+  local text = string.format("%s %d", data.text, self.state.count)
+  return { lines = {text} }
 end
 
 return M

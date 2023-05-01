@@ -38,9 +38,10 @@ function M.parse_ul(div, buf)
 	end
 
 	-- put into div
-	div.text = text
-	div.lines = cool_items
-	return div
+	return {
+		text = text,
+		lines = cool_items,
+	}
 end
 
 return M

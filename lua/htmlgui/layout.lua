@@ -44,7 +44,7 @@ function M.setup(config, filename)
 	end
 
 	-- render
-	M:render()
+	M:create()
 	M:set_keys()
 	M:set_autoreload()
 end
@@ -218,7 +218,7 @@ function M.statusline(win, info, debug)
 	return left .. right
 end
 
-function M.render(self)
+function M.create(self)
 	-- reset all windows
 	for _, s in ipairs(self.state.data) do
 		a.nvim_win_close(s.win, true)
@@ -246,26 +246,35 @@ function M.render(self)
 
 		-- render to gui { element, win, buf }
 		local data = html_element.create_nv_element(element, self.state.gui.win, M.config, M.state)
-    html_element.render(data)
 
 		-- keep track
 		table.insert(self.state.data, data)
 	end
 
-	local info = self.get_html_info(self.state.html.buf)
-	vim.opt.statusline = M.statusline(self.state.gui.win, info, self.config.debug)
+	-- render
+	M.render(self.state, self.config.debug)
+end
+
+function M.render(state, debug)
+	for _, data in pairs(state.data) do
+		html_element.render(data)
+	end
+
+	-- statusline
+	local info = M.get_html_info(state.html.buf)
+	vim.opt.statusline = M.statusline(state.gui.win, info, debug)
 end
 
 function M.set_keys(self)
 	local elements = self.state.data
 	local script = self.script
-	for _, element in pairs(elements) do
-		if element.element.attrs == nil then
+	for _, data in pairs(elements) do
+		if data.element.attrs == nil then
 			return
 		end
 
-		-- element = { element = .., rect = .., data = .. }
-		for key, value in pairs(element.element.attrs) do
+		-- data = { element = .., rect = .., data = .. }
+		for key, value in pairs(data.element.attrs) do
 			-- get only callbacks
 			if string.sub(key, 1, 3) == "on:" then
 				-- wrap to insert element as data to handler
@@ -276,19 +285,28 @@ function M.set_keys(self)
 						end
 						local handle = script[value]
 						if handle ~= nil then
-							handle(script, element)
+							local returned = handle(script, data.element)
+
 							-- rerender relevant component with only state changed
+							if returned ~= nil then
+								for dkey, dvalue in pairs(returned) do
+									data.element[dkey] = dvalue
+								end
+								html_element.render(data)
+
+								-- mark visually
+								utils.mark_last_row(data)
+							end
 						end
 					end
 				end
 
 				-- apply keymap for buffer
 				local lhs = string.sub(key, 4)
-				map("n", lhs, callback, { buffer = element.buf })
+				map("n", lhs, callback, { buffer = data.buf })
 
 				-- mark visually
-				local size = utils.get_width_height(element.win)
-				utils.mark_last_row(element.buf, size)
+				utils.mark_last_row(data)
 			end
 		end
 	end
@@ -302,9 +320,9 @@ function M.set_autoreload(self)
 		callback = function()
 			-- TODO: how to properly reload?
 			-- require("plenary.reload").reload_module(self.info.script, false)
-			package.loaded[self.info.script] = nil
+			-- package.loaded[self.info.script] = nil
 			self.script = utils.load_script(self.info.script)
-			self:render()
+			self:create()
 			self:set_keys()
 		end,
 	})
@@ -315,7 +333,7 @@ function M.set_autoreload(self)
 		group = au_resize,
 		callback = function()
 			local current_win = a.nvim_get_current_win()
-			self:render()
+			self:create()
 			self:set_keys()
 			if a.nvim_win_is_valid(current_win) then
 				a.nvim_set_current_win(current_win)

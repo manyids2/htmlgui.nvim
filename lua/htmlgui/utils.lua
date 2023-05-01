@@ -68,9 +68,19 @@ function M.focus(win_name, state)
 	end
 end
 
-function M.mark_last_row(buf, size)
-	a.nvim_buf_clear_namespace(buf, -1, size.height, size.height + 1)
-	a.nvim_buf_add_highlight(buf, -1, "DiagnosticFloatingHint", size.height - 1, 0, size.width)
+function M.mark_last_row(data)
+	local buf = data.buf
+	local size = M.get_width_height(data.win)
+
+	local opts = {
+		id = 1,
+		end_line = 0,
+		virt_text_win_col = 0,
+		virt_text = { { string.rep("＿", size.width) } },
+	}
+
+	local ns_id = a.nvim_create_namespace("mark_float")
+	data.mark_id = a.nvim_buf_set_extmark(buf, ns_id, size.height - 1, 0, opts)
 end
 
 function M.get_width_height(win)

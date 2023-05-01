@@ -29,7 +29,9 @@ function M.parse_element(node, buf)
 	-- BUG: only gets first line, need to get range from start and end tags
 	if tagname == "ul" then
 		-- get relevant lines
-		element = html_ul.parse_ul(element, buf)
+		local e = html_ul.parse_ul(element, buf)
+		element.text = e.text
+		element.lines = e.lines
 	else
 		element.text = ts.get_node_text(tag:next_named_sibling(), buf)
 		element.lines = { element.text }
@@ -52,17 +54,17 @@ function M.set_keymaps(element, buf, app_state, app_config)
 	end
 end
 
-function M.set_colors(element, buf, size)
+function M.set_colors(data, size)
 	-- window colors
-	local hl_name = element.attrs.style.color
-	a.nvim_buf_clear_namespace(buf, -1, 0, -1)
+	local hl_name = data.element.attrs.style.color
+	a.nvim_buf_clear_namespace(data.buf, -1, 0, -1)
 	for i = 0, size.height, 1 do
-		a.nvim_buf_add_highlight(buf, -1, hl_name, i, 0, -1)
+		a.nvim_buf_add_highlight(data.buf, -1, hl_name, i, 0, -1)
 	end
 
 	-- mark hrefs
-	if element.attrs.href ~= nil then
-		utils.mark_last_row(buf, size)
+	if data.element.attrs.href ~= nil then
+		utils.mark_last_row(data)
 	end
 end
 
@@ -73,7 +75,7 @@ function M.render(data)
 	a.nvim_buf_set_lines(data.buf, 0, -1, false, styled_lines)
 
 	-- colors
-	M.set_colors(data.element, data.buf, size)
+	M.set_colors(data, size)
 end
 
 function M.create_nv_element(element, parent_win, app_config, app_state)
