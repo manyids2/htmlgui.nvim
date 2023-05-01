@@ -38,26 +38,22 @@ function M.parse_element(node, buf)
 	return element
 end
 
-function M.create_element(element, parent_win, app_config, app_state)
-	-- create buffer with element text
-	local buf = a.nvim_create_buf(false, true)
-
-	-- create window
+function M.create_win(element, buf, parent_win)
 	local opts = utils.get_win_opts(element.attrs.style, parent_win)
 	local win = a.nvim_open_win(buf, true, opts)
+	return win
+end
 
-	local size = utils.get_width_height(win)
-	local styled_lines = utils.lines_to_full_size(element.lines, size, element.attrs.style)
-	a.nvim_buf_set_lines(buf, 0, -1, false, styled_lines)
-
-	-- if href, then provide keymap
+function M.set_keymaps(element, buf, app_state, app_config)
 	if element.attrs.href ~= nil then
 		html_a.set_keymaps(element, buf, app_state, app_config)
 	else
 		map("n", "<enter>", function() end, { buffer = buf })
 	end
+end
 
-	-- set color
+function M.set_colors(element, buf, size)
+	-- window colors
 	local hl_name = element.attrs.style.color
 	a.nvim_buf_clear_namespace(buf, -1, 0, -1)
 	for i = 0, size.height, 1 do
@@ -66,11 +62,29 @@ function M.create_element(element, parent_win, app_config, app_state)
 
 	-- mark hrefs
 	if element.attrs.href ~= nil then
-		a.nvim_buf_clear_namespace(buf, -1, size.height - 1, size.height)
-		a.nvim_buf_add_highlight(buf, -1, "DiagnosticFloatingHint", size.height - 1, 0, 1)
+		utils.mark_last_row(buf, size)
 	end
+end
 
-	return { element = element, win = win, buf = buf }
+function M.render(data)
+	-- actual render
+	local size = utils.get_width_height(data.win)
+	local styled_lines = utils.lines_to_full_size(data.element.lines, size, data.element.attrs.style)
+	a.nvim_buf_set_lines(data.buf, 0, -1, false, styled_lines)
+
+	-- colors
+	M.set_colors(data.element, data.buf, size)
+end
+
+function M.create_nv_element(element, parent_win, app_config, app_state)
+	-- create buffer with element text
+	local buf = a.nvim_create_buf(false, true)
+	local win = M.create_win(element, buf, parent_win)
+
+	-- keymaps
+	M.set_keymaps(element, buf, app_state, app_config)
+	local data = { element = element, win = win, buf = buf }
+	return data
 end
 
 return M

@@ -68,6 +68,11 @@ function M.focus(win_name, state)
 	end
 end
 
+function M.mark_last_row(buf, size)
+	a.nvim_buf_clear_namespace(buf, -1, size.height, size.height + 1)
+	a.nvim_buf_add_highlight(buf, -1, "DiagnosticFloatingHint", size.height - 1, 0, size.width)
+end
+
 function M.get_width_height(win)
 	local width = a.nvim_win_get_width(win)
 	local height = a.nvim_win_get_height(win)

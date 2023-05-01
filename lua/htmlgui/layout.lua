@@ -3,7 +3,7 @@ local map = vim.keymap.set
 local utils = require("htmlgui.utils")
 local ts_css = require("htmlgui.ts_css")
 local ts_html = require("htmlgui.ts_html")
-local element_html = require("htmlgui.html.element")
+local html_element = require("htmlgui.html.element")
 
 local M = {}
 
@@ -232,19 +232,21 @@ function M.render(self)
 	end
 
 	-- TODO: for now, create elements for each direct child of body
+	-- TODO: update only state if not first time
 	local body = ts_html.get_body(self.state.html.buf)
 	for i = 2, vim.tbl_count(body:named_children()) - 1 do
 		local child = body:named_children()[i]
 
 		-- read and get element info from html { tag, attrs, text }
 		-- NOTE: actually works for any tag with style, etc
-		local element = element_html.parse_element(child, self.state.html.buf)
+		local element = html_element.parse_element(child, self.state.html.buf)
 
 		-- override css styles with inline style
 		element.attrs.style = ts_css.get_style_for_element(element, css)
 
 		-- render to gui { element, win, buf }
-		local data = element_html.create_element(element, self.state.gui.win, M.config, M.state)
+		local data = html_element.create_nv_element(element, self.state.gui.win, M.config, M.state)
+    html_element.render(data)
 
 		-- keep track
 		table.insert(self.state.data, data)
@@ -275,7 +277,7 @@ function M.set_keys(self)
 						local handle = script[value]
 						if handle ~= nil then
 							handle(script, element)
-              -- rerender relevant component with only state changed
+							-- rerender relevant component with only state changed
 						end
 					end
 				end
@@ -286,8 +288,7 @@ function M.set_keys(self)
 
 				-- mark visually
 				local size = utils.get_width_height(element.win)
-				a.nvim_buf_clear_namespace(element.buf, -1, size.height - 1, size.height)
-				a.nvim_buf_add_highlight(element.buf, -1, "DiagnosticFloatingHint", size.height - 1, 0, 1)
+				utils.mark_last_row(element.buf, size)
 			end
 		end
 	end
@@ -299,9 +300,9 @@ function M.set_autoreload(self)
 	a.nvim_create_autocmd({ "BufWritePost" }, {
 		group = au_save,
 		callback = function()
-      -- TODO: how to properly reload?
+			-- TODO: how to properly reload?
 			-- require("plenary.reload").reload_module(self.info.script, false)
-      package.loaded[self.info.script] = nil
+			package.loaded[self.info.script] = nil
 			self.script = utils.load_script(self.info.script)
 			self:render()
 			self:set_keys()
