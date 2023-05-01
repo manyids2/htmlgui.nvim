@@ -88,9 +88,9 @@ function M.load_script(buf)
 	local scriptpath = ts_html.get_script(ts_html.get_root(buf), buf)
 	scriptpath = string.sub(scriptpath, 1, string.len(scriptpath) - 4)
 	if pcall(function()
-		require("htmlgui." .. scriptpath)
+		require(scriptpath)
 	end) then
-		local script = require("htmlgui." .. scriptpath)
+		local script = require(scriptpath)
 		return script
 	end
 end
@@ -126,8 +126,10 @@ function M.set_autoreload(self)
 	a.nvim_create_autocmd({ "WinResized", "VimResized" }, {
 		group = au_resize,
 		callback = function()
+      local current_win = a.nvim_get_current_win()
 			self:render()
 			self:set_keys()
+      a.nvim_set_current_win(current_win)
 		end,
 	})
 end
