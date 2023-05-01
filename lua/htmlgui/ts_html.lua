@@ -1,4 +1,3 @@
-local a = vim.api
 local utils = require("htmlgui.utils")
 
 local M = {}

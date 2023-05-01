@@ -24,8 +24,8 @@ function M.setup(config)
 	config = utils.validate_config(config, default_config)
 
 	-- create layout
-	M.state = M.create_bufs_wins(config)
-	M.info = ts_html.get_info(M.state.html.buf)
+	M.info = M.get_info(buf)
+	M.state = M.create_bufs_wins(config, M.info)
 	M.script = utils.load_script(M.info.script)
 
 	M:render()
@@ -51,7 +51,7 @@ function M.get_info(buf)
 	return info
 end
 
-function M.create_bufs_wins(config)
+function M.create_bufs_wins(config, info)
 	local state = {
 		config = config,
 		data = {},
@@ -77,9 +77,6 @@ function M.create_bufs_wins(config)
 	state.gui.win = a.nvim_get_current_win()
 	state.gui.buf = a.nvim_create_buf(false, true)
 	a.nvim_win_set_buf(state.gui.win, state.gui.buf)
-
-	-- open rest of windows
-	local info = ts_html.get_info(state.html.buf)
 
 	-- style ( last window to use )
 	if config.layout.direction == "vertical" then
@@ -115,18 +112,18 @@ end
 function M.status_line(win, info)
 	local width = a.nvim_win_get_width(win)
 
-  -- right side - files
+	-- right side - files
 	local right = string.format("❰  %s ❰  %s ❰  %s █", info.filename, info.style, info.script)
 	local nright = a.nvim_strwidth(right)
 
-  -- calc padding
+	-- calc padding
 	local ntitle = a.nvim_strwidth(info.title)
 	local nuni = a.nvim_strwidth("█")
 	local rem = width - ntitle - nright - nuni
 	local lpad = math.ceil(rem / 2)
 	local rpad = rem - lpad
 
-  -- left - centred title
+	-- left - centred title
 	local left = string.format("█%s%s%s", string.rep(" ", lpad), info.title, string.rep(" ", rpad))
 	return left .. right
 end
@@ -193,10 +190,10 @@ function M.set_autoreload(self)
 		callback = function()
 			self:render()
 			self:set_keys()
-			a.nvim_set_current_win(self.state.html.win)
 		end,
 	})
 
+	-- Same for resize, except, keep track of current win
 	local au_resize = a.nvim_create_augroup("htmlgui_resize", { clear = true })
 	a.nvim_create_autocmd({ "WinResized", "VimResized" }, {
 		group = au_resize,
