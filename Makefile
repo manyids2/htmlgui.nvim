@@ -26,15 +26,14 @@ define ANNOUNCE_RUN
 
      = 🔥
 
-  First set NVIM_APPNAME if not set ( ${NVIM_APPNAME} )
+  Set NVIM_APPNAME ( currently:  ${NVIM_APPNAME} )
 
   bash: export NVIM_APPNAME=nvim-apps/htmlgui.nvim
   fish: set -x NVIM_APPNAME nvim-apps/htmlgui.nvim
 
-  Go to examples folder, open html file
+  Go to examples folder, open index.html file
 
-	cd ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim/examples
-	nvim index.html
+  cd ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim/examples; nvim index.html
 
 endef
 export ANNOUNCE_RUN
