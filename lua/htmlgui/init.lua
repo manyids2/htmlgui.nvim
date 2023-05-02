@@ -1,10 +1,10 @@
-local layout = require("htmlgui.layout")
+local app = require("htmlgui.app")
 
 function P(x)
 	vim.notify(vim.inspect(x))
 end
 
-layout.setup({
+app.setup({
   debug = true,
 	layout = {
 		direction = "vertical",

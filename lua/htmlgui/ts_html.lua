@@ -10,7 +10,7 @@ M.queries = {
       (start_tag (tag_name) @_title) (#eq? @_title "title")
       (text) @_text (#offset! @_text 0 0 0 0 ))
   )]],
-	style = [[(
+	css = [[(
   element
     (start_tag (tag_name) @_head) (#eq? @_head "head")
     (element
@@ -23,7 +23,7 @@ M.queries = {
   (#eq? @_name "href")
   (#offset! @_value 0 0 0 0 )))
   )]],
-	script = [[(
+	lua = [[(
   script_element
     (start_tag
       (tag_name) @_script
