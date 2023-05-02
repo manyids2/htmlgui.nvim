@@ -5,8 +5,7 @@ install:
 	echo "\n    = 🔥\nRun with\n  bash: export NVIM_APPNAME=nvim-apps/htmlgui.nvim nvim\n  fish: set -x NVIM_APPNAME=nvim-apps/htmlgui.nvim; nvim"
 
 run:
-	cd ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim
-	NVIM_APPNAME=nvim-apps/htmlgui.nvim nvim examples/index.html
+	echo "\n    = 🔥\nRun with\n  bash: export NVIM_APPNAME=nvim-apps/htmlgui.nvim nvim\n  fish: set -x NVIM_APPNAME=nvim-apps/htmlgui.nvim; nvim"
 
 clean:
 	echo "Deleting " ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim
