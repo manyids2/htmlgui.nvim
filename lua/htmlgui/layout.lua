@@ -256,15 +256,19 @@ function M.set_keys(state, info)
 	end
 end
 
+function M.create_render_set_keys(state, config, info)
+	M.create(state, config)
+	M.render(state, config.debug)
+	M.set_keys(state, info)
+end
+
 function M.set_autoreload(state, config, info)
 	-- reload everythin on save for debug
 	local au_save = a.nvim_create_augroup("htmlgui_save", { clear = true })
 	a.nvim_create_autocmd({ "BufWritePost" }, {
 		group = au_save,
 		callback = function()
-			M.create(state, config)
-			M.render(state, config.debug)
-			M.set_keys(state, info)
+			M.create_render_set_keys(state, config, info)
 		end,
 	})
 
@@ -275,9 +279,21 @@ function M.set_autoreload(state, config, info)
 		pattern = { "*.html", "*.css", "*.lua" },
 		callback = function()
 			local current_win = a.nvim_get_current_win()
-			M.create(state, config)
-			M.render(state, config.debug)
-			M.set_keys(state, info)
+			M.create_render_set_keys(state, config, info)
+			if a.nvim_win_is_valid(current_win) then
+				a.nvim_set_current_win(current_win)
+			end
+		end,
+	})
+
+	-- Also for gui
+	local au_resize_gui = a.nvim_create_augroup("htmlgui_resize_gui", { clear = true })
+	a.nvim_create_autocmd({ "WinResized" }, {
+		group = au_resize_gui,
+		buffer = state.gui.buf,
+		callback = function()
+			local current_win = a.nvim_get_current_win()
+			M.create_render_set_keys(state, config, info)
 			if a.nvim_win_is_valid(current_win) then
 				a.nvim_set_current_win(current_win)
 			end
