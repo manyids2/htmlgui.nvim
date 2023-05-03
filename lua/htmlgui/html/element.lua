@@ -37,6 +37,10 @@ function M.parse_element(node, buf)
 		element.lines = { element.text }
 	end
 
+	if element.attrs.cmd ~= nil then
+		element.lines = utils.append_shell_output(element.attrs.cmd, element.lines)
+	end
+
 	return element
 end
 

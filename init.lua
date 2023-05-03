@@ -1,4 +1,4 @@
 require("bootstrap")
-require("mdgui")
+-- require("mdgui")
 vim.cmd([[set background=light]])
 vim.cmd([[colorscheme rosebones]])

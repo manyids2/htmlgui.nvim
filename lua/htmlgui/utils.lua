@@ -65,7 +65,7 @@ function M.mark_last_row(data, icon)
 	end
 	local opts = {
 		id = 1,
-    end_col = 1,
+		end_col = 1,
 		virt_text_pos = "overlay",
 		virt_text = { { icon } },
 	}
@@ -206,6 +206,18 @@ function M.map(mode, lhs, rhs, opts)
 	opts = opts or {}
 	opts.silent = opts.silent ~= false
 	vim.keymap.set(mode, lhs, rhs, opts)
+end
+
+function M.append_shell_output(cmd, lines)
+	local output = vim.fn.system(cmd)
+	local olines = vim.split(output, "\n")
+	table.insert(lines, "")
+	table.insert(lines, " 🚀 Running : " .. cmd)
+	table.insert(lines, "")
+	for _, oline in ipairs(olines) do
+		table.insert(lines, oline)
+	end
+	return lines
 end
 
 return M
