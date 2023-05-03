@@ -308,17 +308,21 @@ function M.set_autoreload(app)
 		end,
 	})
 
+	local function refresh()
+		local current_win = a.nvim_get_current_win()
+		M.create_render_set_keys(app)
+		if a.nvim_win_is_valid(current_win) then
+			a.nvim_set_current_win(current_win)
+		end
+	end
+
 	-- Same for resize, except, keep track of current win
 	local au_resize = a.nvim_create_augroup("htmlgui_resize", { clear = true })
 	a.nvim_create_autocmd({ "WinResized", "VimResized" }, {
 		group = au_resize,
 		pattern = { "*.html", "*.css", "*.lua" },
 		callback = function()
-			local current_win = a.nvim_get_current_win()
-			M.create_render_set_keys(app)
-			if a.nvim_win_is_valid(current_win) then
-				a.nvim_set_current_win(current_win)
-			end
+			refresh()
 		end,
 	})
 
@@ -328,13 +332,14 @@ function M.set_autoreload(app)
 		group = au_resize_gui,
 		buffer = app.state.gui.buf,
 		callback = function()
-			local current_win = a.nvim_get_current_win()
-			M.create_render_set_keys(app)
-			if a.nvim_win_is_valid(current_win) then
-				a.nvim_set_current_win(current_win)
-			end
+			refresh()
 		end,
 	})
+
+	-- Manual refresh
+	vim.keymap.set("n", "<leader>r", function()
+		refresh()
+	end, { desc = "Refresh" })
 end
 
 function M.close(s)
