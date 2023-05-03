@@ -1,4 +1,5 @@
 -- keymaps
+local a = vim.api
 local function map(mode, lhs, rhs, opts)
 	opts = opts or {}
 	opts.silent = opts.silent ~= false
@@ -48,3 +49,10 @@ map("o", "n", "'Nn'[v:searchforward]", { expr = true, desc = "Next search result
 map("n", "N", "'nN'[v:searchforward]", { expr = true, desc = "Prev search result" })
 map("x", "N", "'nN'[v:searchforward]", { expr = true, desc = "Prev search result" })
 map("o", "N", "'nN'[v:searchforward]", { expr = true, desc = "Prev search result" })
+
+-- Debug console
+vim.keymap.set("n", "<C-space>", function()
+	local buf = a.nvim_get_current_buf()
+	local dom = vim.fs.basename(a.nvim_buf_get_name(buf))
+	require("htmlgui.app").setup({ debug = false }, dom)
+end, { desc = "Toggle debug console" })

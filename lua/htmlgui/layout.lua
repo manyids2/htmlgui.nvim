@@ -1,5 +1,4 @@
 local a = vim.api
-local map = vim.keymap.set
 local utils = require("htmlgui.utils")
 local ts_css = require("htmlgui.ts_css")
 local ts_html = require("htmlgui.ts_html")
@@ -240,6 +239,14 @@ function M.set_keys(app)
 	local info = app.info
 	local lua = M.load_script(info.lua)
 	local elements = state.data
+
+	-- remap toggle
+	vim.keymap.set("n", "<C-space>", function()
+		app.config.debug = not app.config.debug
+		require("htmlgui.app").destroy(app.state)
+		require("htmlgui.app").setup(app.config, app.info.dom)
+	end, { desc = "Toggle debug console" })
+
 	for _, data in pairs(elements) do
 		if data.element.attrs == nil then
 			return
@@ -276,7 +283,7 @@ function M.set_keys(app)
 
 				-- apply keymap for buffer ( remove "on:" to get key )
 				local lhs = string.sub(key, 4)
-				map("n", lhs, callback, { buffer = data.buf })
+				vim.keymap.set("n", lhs, callback, { buffer = data.buf })
 
 				-- mark visually
 				utils.mark_last_row(data, " ")
