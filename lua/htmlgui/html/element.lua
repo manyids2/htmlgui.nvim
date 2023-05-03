@@ -46,9 +46,9 @@ function M.create_win(element, buf, parent_win)
 	return win
 end
 
-function M.set_keymaps(element, buf, app_state, app_config)
+function M.set_keymaps(element, buf, app)
 	if element.attrs.href ~= nil then
-		html_a.set_keymaps(element, buf, app_state, app_config)
+		html_a.set_keymaps(element, buf, app)
 	else
 		map("n", "<enter>", function() end, { buffer = buf })
 	end
@@ -64,7 +64,7 @@ function M.set_colors(data, size)
 
 	-- mark hrefs
 	if data.element.attrs.href ~= nil then
-		utils.mark_last_row(data)
+		utils.mark_last_row(data, " ")
 	end
 end
 
@@ -78,14 +78,14 @@ function M.render(data)
 	M.set_colors(data, size)
 end
 
-function M.create_nv_element(element, parent_win, app_config, app_state)
+function M.create_nv_element(element, parent_win, app)
 	-- create buffer with element text
 	local buf = a.nvim_create_buf(false, true)
 	local win = M.create_win(element, buf, parent_win)
 
 	-- keymaps
-	M.set_keymaps(element, buf, app_state, app_config)
-	local data = { element = element, win = win, buf = buf }
+	M.set_keymaps(element, buf, app)
+	local data = { element = element, parent_win = parent_win, win = win, buf = buf }
 	return data
 end
 

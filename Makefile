@@ -38,9 +38,15 @@ define ANNOUNCE_RUN
 endef
 export ANNOUNCE_RUN
 
-
 install:
-	git clone https://github.com/manyids2/htmlgui.nvim.git ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim
+	git clone ./.git ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim
+	rm -r ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim/lua/htmlgui
+	@echo "$$ANNOUNCE_INSTALL"
+
+dev:
+	rm -rf ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim
+	cp -r ./ ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim/
+	rm -r ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim/lua/htmlgui
 	@echo "$$ANNOUNCE_INSTALL"
 
 run:

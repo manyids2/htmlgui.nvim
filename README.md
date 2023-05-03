@@ -2,6 +2,8 @@
 
 Create html + css + lua apps with neovim as 'browser'.
 
+Browse markdown 'apps' with neovim as 'browser'.
+
 ## So many possibilities
 
 - inbuilt debugger
@@ -59,3 +61,4 @@ Module to store state and transitions of htmlgui.
 ### html
 
 ### utils
+

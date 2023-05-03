@@ -38,17 +38,18 @@ function M.load_script(scriptpath)
 	end
 end
 
-function M.get_css_info(buf)
-	-- get info from css buffer
-	local lang = "css"
-	local root = utils.get_root(buf, lang)
-	local filename = vim.fs.basename(a.nvim_buf_get_name(buf))
-	local classes = ts_css.get_classes(root, buf, lang)
-	return {
-		root = root,
-		filename = filename,
-		classes = classes,
-	}
+function M.get_css_info(state)
+	local css = { classes = {} }
+	if state.css then
+		-- get info from css buffer
+		local root = utils.get_root(state.css.buf, "css")
+		css = {
+			root = root,
+			filename = vim.fs.basename(a.nvim_buf_get_name(state.css.buf)),
+			classes = ts_css.get_classes(root, state.css.buf, "css"),
+		}
+	end
+	return css
 end
 
 function M.init_wins_bufs(info, direction, debug)
@@ -158,21 +159,48 @@ function M.statusline(win, info, debug)
 	return left .. right
 end
 
-function M.create(state, config)
-	-- reset all windows
+function M.close_elements(state)
 	for _, s in ipairs(state.data) do
 		a.nvim_buf_delete(s.buf, { force = true })
 		if a.nvim_win_is_valid(s.win) then
 			a.nvim_win_close(s.win, true)
 		end
 	end
+end
+
+function M.parse_dom(app)
+	local state = app.state
+	local css = app.css
+	local body = ts_html.get_body(state.dom.buf)
+	for i = 2, vim.tbl_count(body:named_children()) - 1 do
+		local child = body:named_children()[i]
+
+		-- read and get element info from html { tag, attrs, text }
+		local element = html_element.parse_element(child, state.dom.buf)
+
+		-- override css styles with inline style
+		element.attrs.style = ts_css.get_style_for_element(element, css)
+
+		-- render to gui { element, win, buf }
+		local parent_win = state.gui.win
+		local data = html_element.create_nv_element(element, parent_win, app)
+
+		-- keep track
+		table.insert(state.data, data)
+	end
+end
+
+function M.create(app)
+	local state = app.state
+
+	-- reset all windows
+	M.close_elements(state)
+
+	-- remove references to elements
 	state.data = {}
 
 	-- reload css data
-	local css = { classes = {} }
-	if state.css then
-		css = M.get_css_info(state.css.buf)
-	end
+	local css = M.get_css_info(state)
 
 	-- TODO: for now, create elements for each direct child of body
 	local body = ts_html.get_body(state.dom.buf)
@@ -187,7 +215,7 @@ function M.create(state, config)
 
 		-- render to gui { element, win, buf }
 		local parent_win = state.gui.win
-		local data = html_element.create_nv_element(element, parent_win, config, state)
+		local data = html_element.create_nv_element(element, parent_win, app)
 
 		-- keep track
 		table.insert(state.data, data)
@@ -195,7 +223,9 @@ function M.create(state, config)
 	return state
 end
 
-function M.render(state, debug)
+function M.render(app)
+	local state = app.state
+	local debug = app.config.debug
 	for _, data in pairs(state.data) do
 		html_element.render(data)
 	end
@@ -205,7 +235,9 @@ function M.render(state, debug)
 	vim.opt.statusline = M.statusline(state.gui.win, info, debug)
 end
 
-function M.set_keys(state, info)
+function M.set_keys(app)
+	local state = app.state
+	local info = app.info
 	local lua = M.load_script(info.lua)
 	local elements = state.data
 	for _, data in pairs(elements) do
@@ -222,24 +254,21 @@ function M.set_keys(state, info)
 				local callback = function()
 					if lua ~= nil then
 						if lua[value] == nil then
-							vim.notify("Could not set mapping: " .. value)
+							vim.notify("Could not find handle: " .. value)
 						end
-						-- get ref to the function
-						local handle = lua[value]
-						if handle ~= nil then
-							-- get result from callback
-							local returned = handle(lua, data.element)
 
-							-- rerender relevant component with only state changed
-							if returned ~= nil then
-								for dkey, dvalue in pairs(returned) do
-									data.element[dkey] = dvalue
-								end
-								html_element.render(data)
+						-- get result from callback
+						local returned = lua[value](lua, data.element)
 
-								-- mark visually
-								utils.mark_last_row(data)
+						-- rerender relevant component with only state changed
+						if returned ~= nil then
+							for dkey, dvalue in pairs(returned) do
+								data.element[dkey] = dvalue
 							end
+							html_element.render(data)
+
+							-- mark visually
+							utils.mark_last_row(data, " ")
 						end
 					end
 				end
@@ -250,25 +279,25 @@ function M.set_keys(state, info)
 				map("n", lhs, callback, { buffer = data.buf })
 
 				-- mark visually
-				utils.mark_last_row(data)
+				utils.mark_last_row(data, " ")
 			end
 		end
 	end
 end
 
-function M.create_render_set_keys(state, config, info)
-	M.create(state, config)
-	M.render(state, config.debug)
-	M.set_keys(state, info)
+function M.create_render_set_keys(app)
+	M.create(app)
+	M.render(app)
+	M.set_keys(app)
 end
 
-function M.set_autoreload(state, config, info)
+function M.set_autoreload(app)
 	-- reload everythin on save for debug
 	local au_save = a.nvim_create_augroup("htmlgui_save", { clear = true })
 	a.nvim_create_autocmd({ "BufWritePost" }, {
 		group = au_save,
 		callback = function()
-			M.create_render_set_keys(state, config, info)
+			M.create_render_set_keys(app)
 		end,
 	})
 
@@ -279,7 +308,7 @@ function M.set_autoreload(state, config, info)
 		pattern = { "*.html", "*.css", "*.lua" },
 		callback = function()
 			local current_win = a.nvim_get_current_win()
-			M.create_render_set_keys(state, config, info)
+			M.create_render_set_keys(app)
 			if a.nvim_win_is_valid(current_win) then
 				a.nvim_set_current_win(current_win)
 			end
@@ -290,10 +319,10 @@ function M.set_autoreload(state, config, info)
 	local au_resize_gui = a.nvim_create_augroup("htmlgui_resize_gui", { clear = true })
 	a.nvim_create_autocmd({ "WinResized" }, {
 		group = au_resize_gui,
-		buffer = state.gui.buf,
+		buffer = app.state.gui.buf,
 		callback = function()
 			local current_win = a.nvim_get_current_win()
-			M.create_render_set_keys(state, config, info)
+			M.create_render_set_keys(app)
 			if a.nvim_win_is_valid(current_win) then
 				a.nvim_set_current_win(current_win)
 			end
