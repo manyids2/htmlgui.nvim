@@ -38,7 +38,7 @@ function M.load_script(scriptpath)
 end
 
 function M.get_css_info(state)
-	local css = { classes = {} }
+	local css = { classes = {}, html = {} }
 	if state.css then
 		-- get info from css buffer
 		local root = utils.get_root(state.css.buf, "css")
@@ -46,6 +46,7 @@ function M.get_css_info(state)
 			root = root,
 			filename = vim.fs.basename(a.nvim_buf_get_name(state.css.buf)),
 			classes = ts_css.get_classes(root, state.css.buf, "css"),
+			html = ts_css.get_html(root, state.css.buf, "css"),
 		}
 	end
 	return css
@@ -200,6 +201,16 @@ function M.create(app)
 
 	-- reload css data
 	local css = M.get_css_info(state)
+
+	-- set colorscheme
+	if css.html.colorscheme ~= nil then
+		vim.cmd("colorscheme " .. css.html.colorscheme)
+	end
+
+	-- set background
+	if css.html.background ~= nil then
+		vim.cmd("set background=" .. css.html.background)
+	end
 
 	-- TODO: for now, create elements for each direct child of body
 	local body = ts_html.get_body(state.dom.buf)
