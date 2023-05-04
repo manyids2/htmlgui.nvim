@@ -6,12 +6,18 @@ Browse markdown 'apps' with neovim as 'browser'.
 
 ## So many possibilities
 
-- inbuilt debugger
-- hyperlinks with href
-- element definitions and defaults
-- highlights instead of background/foreground using treesitter
-- help with ? per element, global
-- tabbing with treesitter elements
+- [x] inbuilt debugger
+- [x] hyperlinks with href
+- [x] element definitions and defaults
+- [x] highlights instead of background/foreground using treesitter
+- [x] run shell command for element
+- [ ] therefore, can 'code' in absolutely any language
+- [ ] dom in any language supported by treesitter
+- [ ] support entire paths instead of filenames
+- [ ] open diff directory with given html file - add to config
+- [ ] help with ? per element, global
+- [ ] tabbing with treesitter elements
+- [ ] providing context with jinja
 
 ## So many details
 
