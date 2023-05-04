@@ -3,21 +3,28 @@
 
 <head>
   <title>index.html</title>
+  <link href="index.css" rel="stylesheet" />
+  <script src="index.lua"></script>
 </head>
 
 <body>
-  <div style="row:0.1; height: 0.2;
-                color: IncSearch;"
-    >    = 🔥 </div>
 
-  <div style="row:0.5; height: 0.2;
-                color: Normal;
-                align: center;"
-    > htmlgui.nvim </div>
+  <div
+    style="row:0.1; height: 0.2;
+          color: IncSearch;"
+  >    = 🔥 </div>
 
-  <div style="row:0.8; height: 3;"
-       href="help.html"
-    > help </div>
+  <div
+    class="selected"
+    on:j="increment"
+    on:k="decrement"
+    cmd="exa --icons"
+  > htmlgui.nvim </div>
+
+  <div
+    style="row:0.8; height: 3;"
+    href="help.html"
+  > help </div>
 
 </body>
 

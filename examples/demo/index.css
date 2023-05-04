@@ -1,0 +1,12 @@
+html {
+  colorscheme: habamax;
+  background: dark;
+}
+
+.selected {
+  row: 0.5;
+  height: 0.2;
+  color: Normal;
+  align-items: left;
+  justify-content: center;
+}

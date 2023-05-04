@@ -351,6 +351,11 @@ function M.set_autoreload(app)
 	vim.keymap.set("n", "<leader>r", function()
 		refresh()
 	end, { desc = "Refresh" })
+
+	-- Help
+	vim.keymap.set("n", "?", function()
+		P("help")
+	end, { desc = "Help" })
 end
 
 function M.close(s)
