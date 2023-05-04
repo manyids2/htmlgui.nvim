@@ -355,7 +355,9 @@ function M.set_autoreload(app)
 
 	-- Help
 	vim.keymap.set("n", "?", function()
-		P("help")
+		app.config.debug = false
+		require("htmlgui.app").destroy(app.state)
+		require("htmlgui.app").setup(app.config, "help.html")
 	end, { desc = "Help" })
 end
 

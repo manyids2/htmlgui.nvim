@@ -34,7 +34,7 @@ function M.parse_ul(div, buf)
 	-- fancy formatting
 	local cool_items = {}
 	for _, line in ipairs(lines) do
-		table.insert(cool_items, string.format("  🍎  %s", line))
+		table.insert(cool_items, string.format("  ⍟  %s", line))
 	end
 
 	-- put into div
