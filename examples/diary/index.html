@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>index.html</title>
+  <link href="index.css" rel="stylesheet" />
+  <script src="index.lua"></script>
+</head>
+
+<body>
+
+  <div
+    style="row:0; height: 1;
+          color: IncSearch;"
+  >    = 🔥 </div>
+
+  <div
+    class="calendar"
+    on:e="edit"
+    on:t="today"
+    cwd="/tmp/nvim-apps/diary"
+    cmd="ncal -h"
+  > htmlgui.nvim </div>
+
+  <div
+    style="row:0.9; height: 1;"
+    href="help.html"
+  > help </div>
+
+</body>
+
+</html>

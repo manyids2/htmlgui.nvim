@@ -4,6 +4,8 @@ Create html + css + lua apps with neovim as 'browser'.
 
 Browse markdown 'apps' with neovim as 'browser'.
 
+- [ ] Just read about `nui.nvim`. Need to refactor use it as backend!
+
 ## So many possibilities
 
 - [x] inbuilt debugger

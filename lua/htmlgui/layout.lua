@@ -314,6 +314,7 @@ function M.set_autoreload(app)
 	local au_save = a.nvim_create_augroup("htmlgui_save", { clear = true })
 	a.nvim_create_autocmd({ "BufWritePost" }, {
 		group = au_save,
+		pattern = { "*.html", "*.css", "*.lua" },
 		callback = function()
 			M.create_render_set_keys(app)
 		end,
