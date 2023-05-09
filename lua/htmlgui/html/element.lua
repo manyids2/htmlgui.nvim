@@ -79,13 +79,18 @@ function M.render(data)
 	a.nvim_buf_set_lines(data.buf, 0, -1, false, styled_lines)
 
 	-- colors
-	M.set_colors(data, size)
+	if data.element.attrs.filetype == nil then
+		M.set_colors(data, size)
+	end
 end
 
 function M.create_nv_element(element, parent_win, app)
 	-- create buffer with element text
 	local buf = a.nvim_create_buf(false, true)
 	local win = M.create_win(element, buf, parent_win)
+	if element.attrs.filetype ~= nil then
+		a.nvim_buf_set_option(buf, "filetype", element.attrs.filetype)
+	end
 
 	-- keymaps
 	M.set_keymaps(element, buf, app)

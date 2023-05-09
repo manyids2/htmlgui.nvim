@@ -47,3 +47,13 @@ html {
   align-items: left;
   justify-content: top;
 }
+
+.preview {
+  row: 3;
+  col: 0.45;
+  height: 28;
+  width: 0.45;
+  color: CursorLineNr;
+  align-items: left;
+  justify-content: top;
+}

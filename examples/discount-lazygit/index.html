@@ -16,7 +16,7 @@
 
   <div
     class="status"
-      cmd="set xx (git rev-parse --show-toplevel);echo (basename $xx) (git branch --show-current);"
+    cmd="set xx (git rev-parse --show-toplevel);echo (basename $xx) '->' (git branch --show-current);"
   > status </div>
 
   <div
@@ -38,6 +38,13 @@
     class="stash"
     cmd="git stash list | cut -d':' -f2-"
   > stash </div>
+
+  <div
+    id="preview"
+    class="preview"
+    cmd="git diff"
+    filetype="diff"
+  > diff </div>
 
 </body>
 
