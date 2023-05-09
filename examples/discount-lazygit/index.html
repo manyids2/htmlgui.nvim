@@ -16,22 +16,26 @@
 
   <div
     class="status"
-    cmd="set xx (git rev-parse --show-toplevel);echo (basename $xx) '->' (git branch --show-current);"
+    cmd="set xx (git rev-parse --show-toplevel);echo '  ' (basename $xx) '->' (git branch --show-current);"
+    on:s="preview_status"
   > status </div>
 
   <div
     class="files"
     cmd="git status --porcelain"
+    on:s="preview_file"
   > files </div>
 
   <div
     class="branches"
     cmd="git branch -a"
+    on:s="preview_branch"
   > branches </div>
 
   <div
     class="commits"
     cmd="git lol"
+    on:s="preview_commit"
   > commits </div>
 
   <div
@@ -45,6 +49,11 @@
     cmd="git diff"
     filetype="diff"
   > diff </div>
+
+  <div
+    style="row:0.8; height: 3;"
+    href="help.html"
+  > help </div>
 
 </body>
 

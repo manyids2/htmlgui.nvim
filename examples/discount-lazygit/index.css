@@ -5,6 +5,7 @@ html {
 
 .status {
   row: 3;
+  col: 0.05;
   height: 2;
   width: 0.3;
   color: CursorLineNr;
@@ -14,15 +15,17 @@ html {
 
 .files {
   row: 6;
+  col: 0.05;
   height: 10;
   width: 0.3;
-  color: CursorLineNr;
+  color: Normal;
   align-items: left;
   justify-content: top;
 }
 
 .branches {
   row: 17;
+  col: 0.05;
   height: 5;
   width: 0.3;
   color: CursorLineNr;
@@ -32,15 +35,17 @@ html {
 
 .commits {
   row: 23;
+  col: 0.05;
   height: 5;
   width: 0.3;
-  color: CursorLineNr;
+  color: Normal;
   align-items: left;
   justify-content: top;
 }
 
 .stash {
   row: 29;
+  col: 0.05;
   height: 2;
   width: 0.3;
   color: CursorLineNr;
@@ -50,10 +55,9 @@ html {
 
 .preview {
   row: 3;
-  col: 0.45;
+  col: 0.4;
   height: 28;
-  width: 0.45;
-  color: CursorLineNr;
+  width: 0.55;
   align-items: left;
   justify-content: top;
 }
