@@ -14,13 +14,20 @@
           color: IncSearch;"
   >    = 🔥 </div>
 
+  <ul style="row:2; height: 6">
+    <li> |   q : close / quit        | </li>
+    <li> |   e : edit note for date  | </li>
+    <li> |   t : edit note for today | </li>
+    <li> | C-s : save                | </li>
+  </ul>
+
   <div
     class="calendar"
     on:e="edit"
     on:t="today"
     cwd="/tmp/nvim-apps/diary"
     cmd="ncal -h"
-  > htmlgui.nvim </div>
+  > Diary </div>
 
   <div
     style="row:0.9; height: 1;"

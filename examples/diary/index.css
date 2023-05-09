@@ -3,10 +3,10 @@ html {
   background: dark;
 }
 
-.selected {
-  row: 0.5;
-  height: 0.2;
-  color: Normal;
-  align-items: left;
+.calendar {
+  row: 9;
+  height: 0.5;
+  color: CursorLineNr;
+  align-items: center;
   justify-content: center;
 }

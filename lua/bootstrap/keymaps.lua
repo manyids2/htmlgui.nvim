@@ -6,21 +6,22 @@ local function map(mode, lhs, rhs, opts)
 	vim.keymap.set(mode, lhs, rhs, opts)
 end
 
--- quit
+-- quit, save
 map("n", "q", "<cmd>qa<cr>", { desc = "Quit all" })
 map("n", "<C-s>", "<cmd>w<cr>", { desc = "Save" })
+
+-- tab around
 map("n", "<tab>", "<cmd>wincmd w<cr>", { desc = "Next window" })
 map("n", "<S-tab>", "<cmd>wincmd W<cr>", { desc = "Prev window" })
+
+-- splits
 map("n", "+", "<cmd>set wh=999<cr><cmd>set wiw=999<cr>", { desc = "Maximize window" })
 map("n", "=", "<cmd>set wh=10<cr><cmd>set wiw=10<cr><cmd>wincmd =<cr>", { desc = "Equalize windows" })
 
 -- For comfort options
 map("n", "<leader>l", "<cmd>:Lazy<cr>", { desc = "Lazy" })
 map("n", "<leader>c", "<cmd>:Telescope colorscheme<cr>", { desc = "Colorscheme" })
-
--- Dev for color
-map("n", "<leader>h", "<cmd>:hi<cr>", { desc = "Highlights" })
-map("n", "<leader>sh", "<cmd>:Telescope highlights<cr>", { desc = "Highlights (search)" })
+map("n", "<leader>h", "<cmd>:Telescope highlights<cr>", { desc = "Highlights (search)" })
 
 -- better up/down
 map("n", "j", "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })

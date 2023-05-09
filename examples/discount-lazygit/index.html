@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>index.html</title>
+  <link href="index.css" rel="stylesheet" />
+  <script src="index.lua"></script>
+</head>
+
+<body>
+
+  <div
+    style="row:1; height: 1;
+          color: DiagnosticWarning;"
+  >    = 🔥 </div>
+
+  <div
+    class="status"
+      cmd="set xx (git rev-parse --show-toplevel);echo (basename $xx) (git branch --show-current);"
+  > status </div>
+
+  <div
+    class="files"
+    cmd="git status --porcelain"
+  > files </div>
+
+  <div
+    class="branches"
+    cmd="git branch -a"
+  > branches </div>
+
+  <div
+    class="commits"
+    cmd="git lol"
+  > commits </div>
+
+  <div
+    class="stash"
+    cmd="git stash list | cut -d':' -f2-"
+  > stash </div>
+
+</body>
+
+</html>

@@ -1,0 +1,49 @@
+html {
+  colorscheme: moonfly;
+  background: dark;
+}
+
+.status {
+  row: 3;
+  height: 2;
+  width: 0.3;
+  color: CursorLineNr;
+  align-items: left;
+  justify-content: top;
+}
+
+.files {
+  row: 6;
+  height: 10;
+  width: 0.3;
+  color: CursorLineNr;
+  align-items: left;
+  justify-content: top;
+}
+
+.branches {
+  row: 17;
+  height: 5;
+  width: 0.3;
+  color: CursorLineNr;
+  align-items: left;
+  justify-content: top;
+}
+
+.commits {
+  row: 23;
+  height: 5;
+  width: 0.3;
+  color: CursorLineNr;
+  align-items: left;
+  justify-content: top;
+}
+
+.stash {
+  row: 29;
+  height: 2;
+  width: 0.3;
+  color: CursorLineNr;
+  align-items: left;
+  justify-content: top;
+}

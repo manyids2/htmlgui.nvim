@@ -1,12 +1,12 @@
 html {
-  colorscheme: habamax;
+  colorscheme: forestbones;
   background: dark;
 }
 
 .selected {
-  row: 0.5;
-  height: 0.2;
-  color: Normal;
+  row: 0.2;
+  height: 0.5;
+  color: CursorLineNr;
   align-items: left;
   justify-content: center;
 }
