@@ -18,7 +18,7 @@ html {
   col: 0.05;
   height: 10;
   width: 0.3;
-  color: Normal;
+  color: CursorLineNr;
   align-items: left;
   justify-content: top;
 }
@@ -38,7 +38,7 @@ html {
   col: 0.05;
   height: 5;
   width: 0.3;
-  color: Normal;
+  color: CursorLineNr;
   align-items: left;
   justify-content: top;
 }

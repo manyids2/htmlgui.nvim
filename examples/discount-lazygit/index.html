@@ -17,25 +17,28 @@
   <div
     class="status"
     cmd="set xx (git rev-parse --show-toplevel);echo '  ' (basename $xx) '->' (git branch --show-current);"
-    on:s="preview_status"
+    on:p="preview_status"
   > status </div>
 
   <div
     class="files"
     cmd="git status --porcelain"
-    on:s="preview_file"
+    on:p="preview_file"
+    on:c="do_commit"
+    on:s="do_stage"
+    on:u="do_unstage"
   > files </div>
 
   <div
     class="branches"
     cmd="git branch -a"
-    on:s="preview_branch"
+    on:p="preview_branch"
   > branches </div>
 
   <div
     class="commits"
     cmd="git lol"
-    on:s="preview_commit"
+    on:p="preview_commit"
   > commits </div>
 
   <div
