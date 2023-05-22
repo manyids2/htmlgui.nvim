@@ -94,7 +94,7 @@ local plugins = {
 	"mcchrish/zenbones.nvim",
 
 	-- Debug
-	{ dir = "/home/x/fd/code/nvim-stuff/htmlgui.nvim" },
+	-- { dir = "/home/x/fd/code/nvim-stuff/htmlgui.nvim" },
 
 	-- Release
 	"manyids2/htmlgui.nvim",
