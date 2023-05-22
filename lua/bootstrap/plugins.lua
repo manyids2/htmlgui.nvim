@@ -93,8 +93,11 @@ local plugins = {
 	"aktersnurra/no-clown-fiesta.nvim",
 	"mcchrish/zenbones.nvim",
 
-	-- The juice
+	-- Debug
 	{ dir = "/home/x/fd/code/nvim-stuff/htmlgui.nvim" },
+
+	-- Release
+	"manyids2/htmlgui.nvim",
 }
 
 require("lazy").setup(plugins)

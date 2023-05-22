@@ -1,3 +1,10 @@
 require("bootstrap")
-vim.cmd([[set background=dark]])
-vim.cmd([[colorscheme moonfly]])
+
+local app = require("htmlgui.app")
+
+app.setup({
+	debug = false,
+	layout = {
+		direction = "vertical",
+	},
+})

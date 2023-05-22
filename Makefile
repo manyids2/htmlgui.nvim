@@ -4,10 +4,7 @@ define ANNOUNCE_INSTALL
 
 	   = 🔥
 
-  Setup first time with
-
-  bash: export NVIM_APPNAME=nvim-apps/htmlgui.nvim; nvim
-  fish: set -x NVIM_APPNAME nvim-apps/htmlgui.nvim; nvim
+  Install to /usr/bin/htmlgui.nvim ?
 
 endef
 export ANNOUNCE_INSTALL
@@ -26,33 +23,47 @@ define ANNOUNCE_RUN
 
      = 🔥
 
-  Set NVIM_APPNAME ( currently:  ${NVIM_APPNAME} )
-
-  bash: export NVIM_APPNAME=nvim-apps/htmlgui.nvim
-  fish: set -x NVIM_APPNAME nvim-apps/htmlgui.nvim
+  Using NVIM_APPNAME:  ${NVIM_APPNAME}
 
   Go to examples folder, open index.html file
 
-  cd ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim/examples; nvim index.html
+  cd examples;
+	htmlgui.nvim index.html
 
 endef
 export ANNOUNCE_RUN
 
+define ANNOUNCE_DEV
+
+     = 🔥
+
+	Set Debug/Release in lua/bootstrap/plugins.lua
+
+endef
+export ANNOUNCE_DEV
+
+
 install:
+	export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 	git clone ./.git ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim
-	rm -r ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim/lua/htmlgui
+	cd ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim
+	chmod +x htmlgui.nvim
 	@echo "$$ANNOUNCE_INSTALL"
+	sudo cp htmlgui.nvim /usr/bin/htmlgui.nvim
 
 dev:
+	export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 	rm -rf ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim
 	cp -r ./ ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim/
 	rm -r ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim/lua/htmlgui
 	@echo "$$ANNOUNCE_INSTALL"
 
 run:
+	export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 	@echo "$$ANNOUNCE_RUN"
 
 clean:
+	export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
 	@echo "$$ANNOUNCE_DELETE"
 	@echo -n "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
 	rm -rf ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim
