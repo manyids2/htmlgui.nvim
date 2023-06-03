@@ -1,5 +1,5 @@
 html {
-  colorscheme: forestbones;
+  colorscheme: moonfly;
   background: dark;
 }
 
@@ -7,6 +7,6 @@ html {
   row: 0.2;
   height: 0.5;
   color: CursorLineNr;
-  align-items: left;
+  align-items: center;
   justify-content: center;
 }

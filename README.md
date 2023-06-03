@@ -2,6 +2,8 @@
 
 Create html + css + lua apps with neovim as 'browser'.
 
+![demo](./screenshots/demo.png)
+
 The motivation is:
 
 - Neovim is cross-platform
@@ -24,6 +26,11 @@ TLDR:
 - browser - neovim
 - engine - htmlgui.nvim for now
 - elements - htmlgui.html for now ( should have used `nui.nvim` )
+
+## Examples
+
+![cheapass-diary](./screenshots/cheapass-diary.png)
+![discount-lazygit](./screenshots/discount-lazygit.png)
 
 ## Installation
 
