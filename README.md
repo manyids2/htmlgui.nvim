@@ -34,6 +34,7 @@ TLDR:
 ### cheapass-diary
 
 ![cheapass-diary](./screenshots/cheapass-diary.png)
+![cheapass-diary-edit](./screenshots/cheapass-diary-edit.png)
 
 ### discount-lazygit
 
