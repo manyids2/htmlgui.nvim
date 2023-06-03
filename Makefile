@@ -45,7 +45,8 @@ export ANNOUNCE_DEV
 
 install:
 	export XDG_CONFIG_HOME=${XDG_CONFIG_HOME:-$HOME/.config}
-	git clone ./.git ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim
+	cp -r ./ ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim/
+	rm -r ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim/lua/htmlgui
 	cd ${XDG_CONFIG_HOME}/nvim-apps/htmlgui.nvim
 	chmod +x htmlgui.nvim
 	@echo "$$ANNOUNCE_INSTALL"
