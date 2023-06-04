@@ -25,6 +25,8 @@ TLDR:
 - engine - htmlgui.nvim for now
 - elements - htmlgui.html for now ( should have used `nui.nvim` )
 
+[htmlgui-demo](https://www.youtube.com/watch?v=fK37vlep3v0)
+
 ## Examples
 
 ### demo
