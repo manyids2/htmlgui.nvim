@@ -25,6 +25,8 @@ TLDR:
 - engine - htmlgui.nvim for now
 - elements - htmlgui.html for now ( should have used `nui.nvim` )
 
+This is purely a proof of concept, and currently not usable. see fails.
+
 
 ## Examples
 
