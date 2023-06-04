@@ -38,10 +38,15 @@ This is purely a proof of concept, and currently not usable. see fails.
 
 ### cheapass-diary
 
+[Youtube link to htmlgui.nvim cheapass-diary](https://www.youtube.com/watch?v=8YGckRxl1p4)
+
 ![cheapass-diary](./screenshots/cheapass-diary.png)
 ![cheapass-diary-edit](./screenshots/cheapass-diary-edit.png)
 
 ### discount-lazygit
+
+[Youtube link to htmlgui.nvim discount-lazygit](https://www.youtube.com/watch?v=FzmfbPZeZIY)
+
 
 ![discount-lazygit](./screenshots/discount-lazygit.png)
 
